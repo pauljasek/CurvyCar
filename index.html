@@ -502,7 +502,7 @@ canvas { display:block; } /* To remove the scrollbars */
         carSound2.volume = VOLUME;
         var carStarting = new Audio("sounds/carStart.ogg");
         carStarting.volume = VOLUME * 4 / 5;
-        var scoreSound = new Audio("sounds/selectSound.ogg");
+        var scoreSound = new Audio("sounds/score.ogg");
         scoreSound.volume = VOLUME;
         var deathSound = new Audio("sounds/death.ogg");
         deathSound.volume = VOLUME;
@@ -514,11 +514,12 @@ canvas { display:block; } /* To remove the scrollbars */
 		deathSound.load();
 
 		var music = new Audio("sounds/Move Forward.ogg")
-        music.loop = true;
-		music.load();
+    music.loop = true;
 		music.volume = VOLUME;
+		music.load();
+		music.addEventListener("load",function(e) {console.log("play music"); music.play(); },false);
 
-		var CocoonJSMusic = new CocoonJS.Music().setAudio(music);
+		//var CocoonJSMusic = new CocoonJS.Music().setAudio(music);
 
 
 		if (localStorage.getItem("high score list") == null) {
@@ -2716,8 +2717,7 @@ canvas { display:block; } /* To remove the scrollbars */
 					launchWidth = 512 + (launchTime * 2);
 					launchAlpha = Math.max(1 - launchTime / 120, 0);
 				}
-
-				if (launchTime >= 120)
+				if (launchTime >= 120 && down === true)
 				{
 					updateTime = 0;
 
@@ -2732,11 +2732,24 @@ canvas { display:block; } /* To remove the scrollbars */
 
 					//banner();
 
-					CocoonJSMusic.play();
+					//CocoonJSMusic.play();
+					music.play();
 				}
 			}
 
 			drawingSurface.clearRect(0,0, canvas.width, canvas.height);
+			if (launchTime >= 120) {
+									drawingSurface.save();
+									var fontSize = getFontSize(45);
+
+									drawingSurface.font = "normal normal " + fontSize.toString() + "pt " + font;
+									drawingSurface.fillStyle = "rgba(255, 255, 255, 1)";
+									drawingSurface.textBaseline = "top";
+									drawingSurface.textAlign = "center";
+
+									drawingSurfacefillText("Click/Touch to Start", (1366/2) * horizontalScale, (768/2 - 10) * verticalScale);
+									drawingSurface.restore();
+			}
 			if (launchTime >= -90)
 			{
 				drawingSurface.save();
