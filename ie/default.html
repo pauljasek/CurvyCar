@@ -1,0 +1,4747 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<style>
+        @font-face { font-family: 'CurvyCarFont'; src: url('fonts/CurvyCarFont.ttf'); }
+    </style>
+    <meta charset="utf-8" />
+    <title>Curvy Car</title>
+	
+	<meta name="viewport" content="width=device-width, user-scalable=no">
+	
+	<script src="js/parse-1.2.17.js"></script>
+	<script src="js/CocoonJS.js"></script>
+	<script src="js/CocoonJS_App.js"></script>
+	<script src="js/CocoonJS_App_ForCocoonJS.js"></script>
+	<script src="js/CocoonJS_Ad.js"></script>
+	<script src="js/CocoonJS_Store.js"></script>
+    
+</head>
+
+<style type="text/css">
+* { margin:0; padding:0; } /* to remove the top and left whitespace */
+
+html, body { width:100%; height:100%; background-color: #000; } /* just to be sure these are full screen*/
+
+canvas { display:block; } /* To remove the scrollbars */
+
+</style>
+
+<body style="position:absolute; width:100%; height:100%;">
+
+<!--<div id="nocursor" style="position:absolute; top:0px; left:0px; margin: 0px; padding: 0px;">
+    <form id="form" style="visibility: hidden; z-index: 2; position: fixed; left: 500px; top: 400px; width: 500px; height: 50px; color: #000; text-align: left">
+        <input id="nickname" type="text" name="nickname" style="color: #000000; top: 0px; width: 75%; height: 100%; font-family: CurvyCarFont; font-size: 30px">
+        <input id="submit" type="submit" value="Submit" style="color: #FFF; top: 0px; margin: 0px; padding: 0px; background-color: #000; height: 100%; width: 20%">
+    </form>
+    <span id="text" style="position: absolute; visibility: hidden; font-family: CurvyCarFont;"></span>
+    <canvas height="768" width="1366" style="position: fixed; top: 0px; left: 0px; margin: 0px; padding: 0px; "></canvas>
+    <div id="GlobalScores" style="visibility:visible; z-index: 1; position:fixed; left: 482px; top: 275px; width: 700px; color: #FFFFFF; overflow-y:auto; overflow-x:hidden; font-family: CurvyCarFont;">
+
+    </div>
+</div>
+
+<style type="text/css">
+    .nocursor {
+    cursor: default;
+    }
+
+    body, html {
+    overflow: hidden;
+    }
+</style>-->
+
+
+<script type="text/javascript">
+
+		var donated = false;
+
+
+		function banner()
+		{
+			CocoonJS.Ad.preloadBanner();
+			CocoonJS.Ad.onBannerReady.addEventListener(function()
+			{
+				CocoonJS.Ad.setBannerLayout(CocoonJS.Ad.BannerLayout.BOTTOM_CENTER);
+				if (donated === false)
+				{
+					if (!donated)
+					{
+						CocoonJS.Ad.showBanner();
+					}
+					else
+					{
+						//CocoonJS.Ad.hideBanner();
+					}
+					
+				}
+			});
+		}
+		
+		banner();
+		
+
+        Parse.initialize("vWSnvGQ4Htkva1fd6jKclo1z9KpfeYO6H5rEpHVP", "dj2TMRE3ZBDGpRCdru2q27ID2EyxnUjGCVgYSiiX");
+		
+		CocoonJS.App.setAppShouldFinishCallback(function () {
+		
+			if (gameState === MENU && menuState === MENU)
+			{
+				//CocoonJS.App.forceToFinish();
+				//return false;
+				CocoonJS.App.showMessageBox("Exit", "Are you sure you want to exit Cuvy Car?", "Yes", "No");
+				return false;
+			}
+			else if (gameState === PLAYING)
+			{
+				pauseButton.action();
+				return false;
+			}
+			else if (gameState === MENU)
+			{
+				backButton.action();
+				
+				return false;
+			}
+			else if (gameState === PAUSE)
+			{
+				resumeButton.action();
+				return false;
+			}
+			else if (gameState === WAIT)
+			{
+				menuButton.action();
+				return false;
+			}
+			CocoonJS.App.showMessageBox("Exit", "Are you sure you want to exit Cuvy Car?", "Yes", "No");
+			return false;
+		
+		});
+		
+		CocoonJS.App.onMessageBoxConfirmed.addEventListener(function() {
+			CocoonJS.App.forceToFinish();
+		});
+		
+		CocoonJS.Music= function() {
+			return this;
+		};
+
+		CocoonJS.Music.prototype= {
+
+			audio   : null,
+
+			setAudio : function( audio ) {
+				this.audio= audio;
+				this.audio.load();
+				this.audio.addEventListener(
+					'ended',
+					function(audioEvent) {
+						audioEvent.target.playing= false;
+						console.log("Audio ends playing.");
+					},
+					false
+				);
+				return this;
+			},
+
+			loop : function( ) {
+				if ( !this.audio) {
+					console.log("audio not present.");
+					return;
+				}
+
+				this.audio.loop= !this.audio.loop;
+				return this;
+			},
+
+			play : function() {
+
+				if ( !this.audio) {
+					console.log("audio not present.");
+					return;
+				}
+
+				if ( this.audio.playing ) {
+					return;
+				}
+				this.audio.playing= true;
+
+				//var volume = Math.random();
+				//console.log("volume = " + volume);
+				//this.audio.volume = volume;
+
+				this.audio.play();
+
+
+				return this;
+			},
+
+			pause : function() {
+				if ( !this.audio) {
+					console.log("audio not present.");
+					return;
+				}
+				this.audio.pause();
+				this.audio.playing= false;
+				return this;
+			}
+
+		};
+		
+		var donated = false;;
+		
+		var canPurchase = false;
+		
+		var productId = "donate_remove_ads";
+		
+		if (CocoonJS.Store.nativeExtensionObjectAvailable)
+		{
+			// in-app purchases code here
+			CocoonJS.Store.requestInitialization({
+			  sandbox: false,
+			  managed: true
+			});
+			
+			CocoonJS.Store.start();
+			
+			CocoonJS.Store.fetchProductsFromStore([productId]);
+			
+			CocoonJS.Store.onProductsFetchCompleted.addEventListener(function(products){
+
+				for (var i = products.length - 1; i >= 0; i--) {
+					CocoonJS.Store.addProduct(products[i]);
+					console.log("Adding product to the local database: "+ JSON.stringify(products[i]));
+				};
+				
+				console.log("onProductsFetchCompleted: " + JSON.stringify(products));
+				
+				canPurchase = true;
+			});
+			
+			CocoonJS.Store.onProductPurchaseStarted.addEventListener(function(productId){
+				console.log("onProductPurchaseStarted");
+				console.log(JSON.stringify(arguments));
+			});
+
+			CocoonJS.Store.onProductPurchaseFailed.addEventListener(function(productId,err){
+				console.log("onProductPurchaseFailed");
+				console.log(JSON.stringify(arguments));
+			});
+			
+			purchases = CocoonJS.Store.getPurchases();
+			
+			if (purchases)
+			{
+				for (var i = 0; i < purchases.length; i++)
+				{
+					if (purchases[i].productId === productId)
+					{
+						donated = true;
+						//CocoonJS.Ad.hideBanner();
+						//donateButton.active = false;
+					}
+				}
+				
+			}
+		}
+		
+		if (donated === true)
+		{
+			//CocoonJS.Ad.hideBanner();
+		}
+		
+
+        var cursorTime = 60;
+        var pointerShowing = true;
+        var pointerChanged = false;
+        var link = false;
+
+        var lastTime = 0;
+        var vendors = ['ms', 'moz', 'webkit', 'o'];
+
+        var hasAskedForReview = false;
+		var reviewTime = 0;
+		
+		var readyForReview = false;
+
+
+        var lastTime = 0;
+        var vendors = ['ms', 'moz', 'webkit', 'o'];
+
+        for(var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x)
+        {
+          window.requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame'];
+          window.cancelAnimationFrame = window[vendors[x]+'CancelAnimationFrame']
+          window[vendors[x]+'CancelRequestAnimationFrame'];
+        }
+
+        if (!window.requestAnimationFrame)
+          window.requestAnimationFrame = function(callback, element) {
+          var currTime = new Date().getTime();
+          var timeToCall = Math.max(0, 16 - (currTime - lastTime));
+          var id = window.setTimeout(function() { callback(currTime + timeToCall); }, timeToCall);
+          lastTime = currTime + timeToCall;
+          return id;
+        };
+
+        if (!window.cancelAnimationFrame)
+        {
+          window.cancelAnimationFrame = function(id)
+          {
+            clearTimeout(id);
+          };
+        }
+
+
+
+
+        //purchaseDonation();
+
+        function testDonation() {
+            return false;
+        }
+
+        var FRAMESKIPRATE = 1;
+
+        var LOADING = 0;
+        var MENU = 1;
+        var PLAYING = 2;
+        var WAITING = 3;
+        var PAUSE = 4;
+        var BACKGROUNDS = 5;
+        var RANKS = 6;
+        var CARS = 7;
+        var NAME = 8;
+        var LOCAL = 9;
+        var GLOBAL = 10;
+		var SIDEBAR = 11;
+		var LAUNCH = 12;
+		
+		var page = 1;
+
+        var gameState = LOADING;
+        var rankState = LOCAL;
+		
+		var sideBarState = 0;
+		var lastState = -1;
+		
+		//var body = document.querySelector("body");
+		
+		if (CocoonJS.Store.nativeExtensionObjectAvailable)
+		{
+			var canvas = CocoonJS.App.createScreenCanvas();
+		}
+		else{
+			var canvas = document.createElement('canvas');
+			canvas.style.position = "absolute";
+			canvas.style.margin = "0px";
+			canvas.style.padding = "0px";
+			canvas.style.display = "block";
+			document.body.appendChild(canvas);
+		}
+		//var canvas = document.createElement("canvas");
+        //var canvas = document.querySelector("canvas");
+		
+		//body.appendChild(canvas);
+        
+        canvas.height = window.innerHeight;
+        canvas.width = window.innerWidth;
+
+        var font = "CurvyCarFont";
+		var FONTRATIO = 1;
+
+        var WINDOWHEIGHT = 768;
+        var WINDOWWIDTH = 1366;
+		
+		var PLAYZOOMAMOUNT = 1.3;
+		var MENUZOOMAMOUNT = 1;
+		var ZOOMAMOUNT = MENUZOOMAMOUNT;
+		
+		var verticalScale, horizontalScale, horizontalOffset, verticalOffset, scaleX, scaleY, cutX, cutY;
+		
+		setVerticalAndHorizontalScale(ZOOMAMOUNT);
+		
+		function setVerticalAndHorizontalScale(zoom)
+		{
+			ZOOMAMOUNT = zoom;
+            
+            canvas.height = window.innerHeight;
+            canvas.width = window.innerWidth;
+		
+			verticalScale = canvas.height / WINDOWHEIGHT * ZOOMAMOUNT;
+			horizontalScale = canvas.width / WINDOWWIDTH * ZOOMAMOUNT;
+            horizontalOffset = WINDOWWIDTH - (WINDOWWIDTH / ZOOMAMOUNT);
+            verticalOffset = WINDOWHEIGHT - (WINDOWHEIGHT / ZOOMAMOUNT);
+            
+            cutX = 0;
+            cutY = 0;
+			
+            /*if (verticalScale > horizontalScale) {
+                horizontalScale = verticalScale;
+            }
+            else if (horizontalScale > verticalScale) {
+                verticalScale = horizontalScale;
+            }*/
+			if (verticalScale > horizontalScale) {
+                cutY = WINDOWHEIGHT*verticalScale/ZOOMAMOUNT - WINDOWHEIGHT*horizontalScale/ZOOMAMOUNT;
+				verticalScale = horizontalScale;
+                horizontalOffset = WINDOWWIDTH - (canvas.width / horizontalScale);
+
+			}
+			else if (horizontalScale > verticalScale) {
+                cutX = WINDOWWIDTH*horizontalScale/ZOOMAMOUNT - WINDOWWIDTH*verticalScale/ZOOMAMOUNT;
+				horizontalScale = verticalScale;
+                verticalOffset = WINDOWHEIGHT - (canvas.height / verticalScale);
+
+			}
+			/*if (horizontalOffset > 250) {
+				horizontalOffset = 250;
+				horizontalScale = canvas.width/(-horizontalOffset + WINDOWWIDTH);
+                
+			}
+			if (verticalOffset > 100) {
+				verticalOffset = 100;
+				verticalScale = canvas.height/(-verticalOffset + WINDOWHEIGHT);
+			}*/
+            
+            scaleX = 1;
+            scaleY = 1;
+            
+            canvas.height = canvas.height - cutY;
+            canvas.width = canvas.width - cutX;
+            canvas.style.top = (cutY/2).toString() + "px";
+            canvas.style.left = (cutX/2).toString() + "px";
+            
+            //horizontalOffset = 0;// (ZOOMAMOUNT-1) * WINDOWWIDTH;
+            //verticalOffset = 0; //(ZOOMAMOUNT-1) * WINDOWHEIGHT;
+            
+		}
+
+        //var scoresText = document.querySelector("#GlobalScores");
+		if (false)
+		{
+			scoresText.style.width = (700 * verticalScale).toString() + "px";
+			scoresText.style.height = Math.round(240 * verticalScale).toString() + "px";
+			scoresText.style.top = ((250 - verticalOffset/2) * verticalScale).toString() + "px";
+			scoresText.style.left = ((canvas.width / 2) - (700 * verticalScale / 2)).toString() + "px";
+			scoresText.style.fontSize = (Math.round(18 * horizontalScale)).toString() + "pt";
+		}
+
+        var scoresTextY = 0
+
+        //var form = document.querySelector("#form");
+        //var input = document.querySelector("#nickname");
+        //var submit = document.querySelector("#submit");
+        //form.style.left = ((400 * horizontalScale) + horizontalOffset).toString() + "px";
+        //form.style.top = ((400 * verticalOffset) + verticalOffset).toString() + "px";
+		
+		if (false)
+		{
+        form.style.top = (((300 - verticalOffset/2) * verticalScale)).toString() + "px";
+        form.style.left = ((canvas.width / 2) - ((500 * horizontalScale / 2))).toString() + "px";
+        form.style.width = Math.floor((500 * horizontalScale)).toString() + "px";
+        form.style.height = Math.floor((50 * verticalScale)).toString() + "px";
+		}
+        //input.style.width = Math.floor((400 * horizontalScale)).toString() + "px";
+        //input.style.height = Math.floor((50 * horizontalScale)).toString() + "px";
+        //submit.style.width = Math.floor((100 * horizontalScale)).toString() + "px";
+        //submit.style.height = Math.floor((50 * horizontalScale)).toString() + "px";
+
+
+        //var nickNameBox = document.querySelector("#nickname");
+
+        var nickName = "";
+        //nickNameBox.value = nickName;
+		
+		var nickName = localStorage.getItem("nick name");
+        if (nickName === null) {
+            localStorage.setItem("nick name", "");
+            nickName = "";
+        }
+		
+		
+        //nickNameBox.value = nickName;
+
+
+        var badPhrases = ["abbo", "abo", "abortion", "abuse", "addict", "addicts", "adult", "africa", "african", "alla", "allah", "alligatorbait", "amateur", "american", "anal", "analannie", "analsex", "angie", "angry", "anus", "arab", "arabs", "areola", "argie", "aroused", "arse", "arsehole", "asian", "ass", "assassin", "assassinate", "assassination", "assault", "assbagger", "assblaster", "assclown", "asscowboy", "asses", "assfuck", "assfucker", "asshat", "asshole", "assholes", "asshore", "assjockey", "asskiss", "asskisser", "assklown", "asslick", "asslicker", "asslover", "assman", "assmonkey", "assmunch", "assmuncher", "asspacker", "asspirate", "asspuppies", "assranger", "asswhore", "asswipe", "athletesfoot", "attack", "australian", "babe", "babies", "backdoor", "backdoorman", "backseat", "badfuck", "balllicker", "balls", "ballsack", "banging", "baptist", "barelylegal", "barf", "barface", "barfface", "bast", "bastard ", "bazongas", "bazooms", "beaner", "beast", "beastality", "beastial", "beastiality", "beatoff", "beat-off", "beatyourmeat", "beaver", "bestial", "bestiality", "bi", "biatch", "bible", "bicurious", "bigass", "bigbastard", "bigbutt", "bigger", "bisexual", "bi-sexual", "bitch", "bitcher", "bitches", "bitchez", "bitchin", "bitching", "bitchslap", "bitchy", "biteme", "black", "blackman", "blackout", "blacks", "blind", "blow", "blowjob", "boang", "bogan", "bohunk", "bollick", "bollock", "bomb", "bombers", "bombing", "bombs", "bomd", "bondage", "boner", "bong", "boob", "boobies", "boobs", "booby", "boody", "boom", "boong", "boonga", "boonie", "booty", "bootycall", "bountybar", "bra", "brea5t", "breast", "breastjob", "breastlover", "breastman", "brothel", "bugger", "buggered", "buggery", "bullcrap", "bulldike", "bulldyke", "bullshit", "bumblefuck", "bumfuck", "bunga", "bunghole", "buried", "burn", "butchbabes", "butchdike", "butchdyke", "butt", "buttbang", "butt-bang", "buttface", "buttfuck", "butt-fuck", "buttfucker", "butt-fucker", "buttfuckers", "butt-fuckers", "butthead", "buttman", "buttmunch", "buttmuncher", "buttpirate", "buttplug", "buttstain", "byatch", "cacker", "cameljockey", "cameltoe", "canadian", "cancer", "carpetmuncher", "carruth", "catholic", "catholics", "cemetery", "chav", "cherrypopper", "chickslick", "children's", "chin", "chinaman", "chinamen", "chinese", "chink", "chinky", "choad", "chode", "christ", "christian", "church", "cigarette", "cigs", "clamdigger", "clamdiver", "clit", "clitoris", "clogwog", "cocaine", "cock", "cockblock", "cockblocker", "cockcowboy", "cockfight", "cockhead", "cockknob", "cocklicker", "cocklover", "cocknob", "cockqueen", "cockrider", "cocksman", "cocksmith", "cocksmoker", "cocksucer", "cocksuck ", "cocksucked ", "cocksucker", "cocksucking", "cocktail", "cocktease", "cocky", "cohee", "coitus", "color", "colored", "coloured", "commie", "communist", "condom", "conservative", "conspiracy", "coolie", "cooly", "coon", "coondog", "copulate", "cornhole", "corruption", "cra5h", "crabs", "crack", "crackpipe", "crackwhore", "crack-whore", "crap", "crapola", "crapper", "crappy", "crash", "creamy", "crime", "crimes", "criminal", "criminals", "crotch", "crotchjockey", "crotchmonkey", "crotchrot", "cum", "cumbubble", "cumfest", "cumjockey", "cumm", "cummer", "cumming", "cumquat", "cumqueen", "cumshot", "cunilingus", "cunillingus", "cunn", "cunnilingus", "cunntt", "cunt", "cunteyed", "cuntfuck", "cuntfucker", "cuntlick ", "cuntlicker ", "cuntlicking ", "cuntsucker", "cybersex", "cyberslimer", "dago", "dahmer", "dammit", "damn", "damnation", "damnit", "darkie", "darky", "datnigga", "dead", "deapthroat", "death", "deepthroat", "defecate", "dego", "demon", "deposit", "desire", "destroy", "deth", "devil", "devilworshipper", "dick", "dickbrain", "dickforbrains", "dickhead", "dickless", "dicklick", "dicklicker", "dickman", "dickwad", "dickweed", "diddle", "die", "died", "dies", "dike", "dildo", "dingleberry", "dink", "dipshit", "dipstick", "dirty", "disease", "diseases", "disturbed", "dive", "dix", "dixiedike", "dixiedyke", "doggiestyle", "doggystyle", "dong", "doodoo", "doo-doo", "doom", "dope", "dragqueen", "dragqween", "dripdick", "drug", "drunk", "drunken", "dumb", "dumbass", "dumbbitch", "dumbfuck", "dyefly", "dyke", "easyslut", "eatballs", "eatme", "eatpussy", "ecstacy", "ejaculate", "ejaculated", "ejaculating ", "ejaculation", "enema", "enemy", "erect", "erection", "ero", "escort", "ethiopian", "ethnic", "european", "evl", "excrement", "execute", "executed", "execution", "executioner", "explosion", "facefucker", "faeces", "fag", "fagging", "faggot", "fagot", "failed", "failure", "fairies", "fairy", "faith", "fannyfucker", "fart", "farted ", "farting ", "farty ", "fastfuck", "fat", "fatah", "fatass", "fatfuck", "fatfucker", "fatso", "fckcum", "fear", "feces", "felatio ", "felch", "felcher", "felching", "fellatio", "feltch", "feltcher", "feltching", "fetish", "fight", "filipina", "filipino", "fingerfood", "fingerfuck ", "fingerfucked ", "fingerfucker ", "fingerfuckers", "fingerfucking ", "fire", "firing", "fister", "fistfuck", "fistfucked ", "fistfucker ", "fistfucking ", "fisting", "flange", "flasher", "flatulence", "floo", "flydie", "flydye", "fok", "fondle", "footaction", "footfuck", "footfucker", "footlicker", "footstar", "fore", "foreskin", "forni", "fornicate", "foursome", "fourtwenty", "fraud", "freakfuck", "freakyfucker", "freefuck", "fu", "fubar", "fuc", "fucck", "fuck", "fucka", "fuckable", "fuckbag", "fuckbuddy", "fucked", "fuckedup", "fucker", "fuckers", "fuckface", "fuckfest", "fuckfreak", "fuckfriend", "fuckhead", "fuckher", "fuckin", "fuckina", "fucking", "fuckingbitch", "fuckinnuts", "fuckinright", "fuckit", "fuckknob", "fuckme ", "fuckmehard", "fuckmonkey", "fuckoff", "fuckpig", "fucks", "fucktard", "fuckwhore", "fuckyou", "fudgepacker", "fugly", "fuk", "fuks", "funeral", "funfuck", "fungus", "fuuck", "gangbang", "gangbanged ", "gangbanger", "gangsta", "gatorbait", "gay", "gaymuthafuckinwhore", "gaysex ", "geez", "geezer", "geni", "genital", "german", "getiton", "gin", "ginzo", "gipp", "girls", "givehead", "glazeddonut", "gob", "god", "godammit", "goddamit", "goddammit", "goddamn", "goddamned", "goddamnes", "goddamnit", "goddamnmuthafucker", "goldenshower", "gonorrehea", "gonzagas", "gook", "gotohell", "goy", "goyim", "greaseball", "gringo", "groe", "gross", "grostulation", "gubba", "gummer", "gun", "gyp", "gypo", "gypp", "gyppie", "gyppo", "gyppy", "hamas", "handjob", "hapa", "harder", "hardon", "harem", "headfuck", "headlights", "hebe", "heeb", "hell", "henhouse", "heroin", "herpes", "heterosexual", "hijack", "hijacker", "hijacking", "hillbillies", "hindoo", "hiscock", "hitler", "hitlerism", "hitlerist", "hiv", "ho", "hobo", "hodgie", "hoes", "hole", "holestuffer", "homicide", "homo", "homobangers", "homosexual", "honger", "honk", "honkers", "honkey", "honky", "hook", "hooker", "hookers", "hooters", "hore", "hork", "horn", "horney", "horniest", "horny", "horseshit", "hosejob", "hoser", "hostage", "hotdamn", "hotpussy", "hottotrot", "hummer", "husky", "hussy", "hustler", "hymen", "hymie", "iblowu", "idiot", "ikey", "illegal", "incest", "insest", "intercourse", "interracial", "intheass", "inthebuff", "israel", "israeli", "israel's", "italiano", "itch", "jackass", "jackoff", "jackshit", "jacktheripper", "jade", "jap", "japanese", "japcrap", "jebus", "jeez", "jerkoff", "jesus", "jesuschrist", "jew", "jewish", "jiga", "jigaboo", "jigg", "jigga", "jiggabo", "jigger ", "jiggy", "jihad", "jijjiboo", "jimfish", "jism", "jiz ", "jizim", "jizjuice", "jizm ", "jizz", "jizzim", "jizzum", "joint", "juggalo", "jugs", "junglebunny", "kaffer", "kaffir", "kaffre", "kafir", "kanake", "kid", "kigger", "kike", "kill", "killed", "killer", "killing", "kills", "kink", "kinky", "kissass", "kkk", "knife", "knockers", "kock", "kondum", "koon", "kotex", "krap", "krappy", "kraut", "kum", "kumbubble", "kumbullbe", "kummer", "kumming", "kumquat", "kums", "kunilingus", "kunnilingus", "kunt", "ky", "kyke", "lactate", "laid", "lapdance", "latin", "lesbain", "lesbayn", "lesbian", "lesbin", "lesbo", "lez", "lezbe", "lezbefriends", "lezbo", "lezz", "lezzo", "liberal", "libido", "licker", "lickme", "lies", "limey", "limpdick", "limy", "lingerie", "liquor", "livesex", "loadedgun", "lolita", "looser", "loser", "lotion", "lovebone", "lovegoo", "lovegun", "lovejuice", "lovemuscle", "lovepistol", "loverocket", "lowlife", "lsd", "lubejob", "lucifer", "luckycammeltoe", "lugan", "lynch", "macaca", "mad", "mafia", "magicwand", "mams", "manhater", "manpaste", "marijuana", "mastabate", "mastabater", "masterbate", "masterblaster", "mastrabator", "masturbate", "masturbating", "mattressprincess", "meatbeatter", "meatrack", "meth", "mexican", "mgger", "mggor", "mickeyfinn", "mideast", "milf", "minority", "mockey", "mockie", "mocky", "mofo", "moky", "moles", "molest", "molestation", "molester", "molestor", "moneyshot", "mooncricket", "mormon", "moron", "moslem", "mosshead", "mothafuck", "mothafucka", "mothafuckaz", "mothafucked ", "mothafucker", "mothafuckin", "mothafucking ", "mothafuckings", "motherfuck", "motherfucked", "motherfucker", "motherfuckin", "motherfucking", "motherfuckings", "motherlovebone", "muff", "muffdive", "muffdiver", "muffindiver", "mufflikcer", "mulatto", "muncher", "munt", "murder", "murderer", "muslim", "naked", "narcotic", "nasty", "nastybitch", "nastyho", "nastyslut", "nastywhore", "nazi", "necro", "negro", "negroes", "negroid", "negro's", "nig", "niger", "nigerian", "nigerians", "nigg", "nigga", "niggah", "niggaracci", "niggard", "niggarded", "niggarding", "niggardliness", "niggardliness's", "niggardly", "niggards", "niggard's", "niggaz", "nigger", "niggerhead", "niggerhole", "niggers", "nigger's", "niggle", "niggled", "niggles", "niggling", "nigglings", "niggor", "niggur", "niglet", "nignog", "nigr", "nigra", "nigre", "nip", "nipple", "nipplering", "nittit", "nlgger", "nlggor", "nofuckingway", "nook", "nookey", "nookie", "noonan", "nooner", "nude", "nudger", "nuke", "nutfucker", "nymph", "ontherag", "oral", "orga", "orgasim ", "orgasm", "orgies", "orgy", "osama", "paki", "palesimian", "palestinian", "pansies", "pansy", "panti", "panties", "payo", "pearlnecklace", "peck", "pecker", "peckerwood", "pee", "peehole", "pee-pee", "peepshow", "peepshpw", "pendy", "penetration", "peni5", "penile", "penis", "penises", "penthouse", "period", "perv", "phonesex", "phuk", "phuked", "phuking", "phukked", "phukking", "phungky", "phuq", "pi55", "picaninny", "piccaninny", "pickaninny", "piker", "pikey", "piky", "pimp", "pimped", "pimper", "pimpjuic", "pimpjuice", "pimpsimp", "pindick", "piss", "pissed", "pisser", "pisses ", "pisshead", "pissin ", "pissing", "pissoff ", "pistol", "pixie", "pixy", "playboy", "playgirl", "pocha", "pocho", "pocketpool", "pohm", "polack", "pom", "pommie", "pommy", "poo", "poon", "poontang", "poop", "pooper", "pooperscooper", "pooping", "poorwhitetrash", "popimp", "porchmonkey", "porn", "pornflick", "pornking", "porno", "pornography", "pornprincess", "pot", "poverty", "premature", "pric", "prick", "prickhead", "primetime", "propaganda", "pros", "prostitute", "protestant", "pu55i", "pu55y", "pube", "pubic", "pubiclice", "pud", "pudboy", "pudd", "puddboy", "puke", "puntang", "purinapricness", "puss", "pussie", "pussies", "pussy", "pussycat", "pussyeater", "pussyfucker", "pussylicker", "pussylips", "pussylover", "pussypounder", "pusy", "quashie", "queef", "queer", "quickie", "quim", "ra8s", "rabbi", "racial", "racist", "radical", "radicals", "raghead", "randy", "rape", "raped", "raper", "rapist", "rearend", "rearentry", "rectum", "redlight", "redneck", "reefer", "reestie", "refugee", "reject", "remains", "rentafuck", "republican", "rere", "retard", "retarded", "ribbed", "rigger", "rimjob", "rimming", "roach", "robber", "roundeye", "rump", "russki", "russkie", "sadis", "sadom", "samckdaddy", "sandm", "sandnigger", "satan", "scag", "scallywag", "scat", "schlong", "screw", "screwyou", "scrotum", "scum", "semen", "seppo", "servant", "sex", "sexed", "sexfarm", "sexhound", "sexhouse", "sexing", "sexkitten", "sexpot", "sexslave", "sextogo", "sextoy", "sextoys", "sexual", "sexually", "sexwhore", "sexy", "sexymoma", "sexy-slim", "shag", "shaggin", "shagging", "shat", "shav", "shawtypimp", "sheeney", "shhit", "shinola", "shit", "shitcan", "shitdick", "shite", "shiteater", "shited", "shitface", "shitfaced", "shitfit", "shitforbrains", "shitfuck", "shitfucker", "shitfull", "shithapens", "shithappens", "shithead", "shithouse", "shiting", "shitlist", "shitola", "shitoutofluck", "shits", "shitstain", "shitted", "shitter", "shitting", "shitty ", "shoot", "shooting", "shortfuck", "showtime", "sick", "sissy", "sixsixsix", "sixtynine", "sixtyniner", "skank", "skankbitch", "skankfuck", "skankwhore", "skanky", "skankybitch", "skankywhore", "skinflute", "skum", "skumbag", "slant", "slanteye", "slapper", "slaughter", "slav", "slave", "slavedriver", "sleezebag", "sleezeball", "slideitin", "slime", "slimeball", "slimebucket", "slopehead", "slopey", "slopy", "slut", "sluts", "slutt", "slutting", "slutty", "slutwear", "slutwhore", "smack", "smackthemonkey", "smut", "snatch", "snatchpatch", "snigger", "sniggered", "sniggering", "sniggers", "snigger's", "sniper", "snot", "snowback", "snownigger", "sob", "sodom", "sodomise", "sodomite", "sodomize", "sodomy", "sonofabitch", "sonofbitch", "sooty", "sos", "soviet", "spaghettibender", "spaghettinigger", "spank", "spankthemonkey", "sperm", "spermacide", "spermbag", "spermhearder", "spermherder", "spic", "spick", "spig", "spigotty", "spik", "spit", "spitter", "splittail", "spooge", "spreadeagle", "spunk", "spunky", "squaw", "stagg", "stiffy", "strapon", "stringer", "stripclub", "stroke", "stroking", "stupid", "stupidfuck", "stupidfucker", "suck", "suckdick", "sucker", "suckme", "suckmyass", "suckmydick", "suckmytit", "suckoff", "suicide", "swallow", "swallower", "swalow", "swastika", "sweetness", "syphilis", "taboo", "taff", "tampon", "tang", "tantra", "tarbaby", "tard", "teat", "terror", "terrorist", "teste", "testicle", "testicles", "thicklips", "thirdeye", "thirdleg", "threesome", "threeway", "timbernigger", "tinkle", "tit", "titbitnipply", "titfuck", "titfucker", "titfuckin", "titjob", "titlicker", "titlover", "tits", "tittie", "titties", "titty", "tnt", "toilet", "tongethruster", "tongue", "tonguethrust", "tonguetramp", "tortur", "torture", "tosser", "towelhead", "trailertrash", "tramp", "trannie", "tranny", "transexual", "transsexual", "transvestite", "triplex", "trisexual", "trojan", "trots", "tuckahoe", "tunneloflove", "turd", "turnon", "twat", "twink", "twinkie", "twobitwhore", "uck", "uk", "unfuckable", "upskirt", "uptheass", "upthebutt", "urinary", "urinate", "urine", "usama", "uterus", "vagina", "vaginal", "vatican", "vibr", "vibrater", "vibrator", "vietcong", "violence", "virgin", "virginbreaker", "vomit", "vulva", "wab", "wank", "wanker", "wanking", "waysted", "weapon", "weenie", "weewee", "welcher", "welfare", "wetb", "wetback", "wetspot", "whacker", "whash", "whigger", "whiskey", "whiskeydick", "whiskydick", "whit", "whitenigger", "whites", "whitetrash", "whitey", "whiz", "whop", "whore", "whorefucker", "whorehouse", "wigger", "willie", "williewanker", "willy", "wn", "wog", "women's", "wop", "wtf", "wuss", "wuzzie", "xtc", "xxx", "yankee", "yellowman", "zigabo", "zipperhead"];
+
+        checkName(nickName);
+        checkIfNameIsBlank(nickName);
+
+        function checkName(nameToTest) {
+            var testName = nameToTest.toLowerCase();
+            console.log(testName);
+            for (var i = 0; i < badPhrases.length; i++) {
+                if (testName.indexOf(badPhrases[i]) !== -1) {
+                    console.log("badName");
+                    nickName = "";
+                    nameWarningText = "Name is not appropriate.";
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function checkIfNameIsBlank(nameToTest) {
+            var testName = nameToTest.toLowerCase();
+            if (testName.trim() === "") {
+                nickName = "";
+                nameWarningText = "Name cannot be blank.";
+                return true;
+            }
+			return false;
+        }
+        
+        /*form.addEventListener("submit", function (event) {
+            event.preventDefault();
+            if (nickNameBox.value === "") {
+                nameWarningText = "Username cannot be blank";
+            }
+            else if (nickNameBox.value.length > 18) {
+                nameWarningText = "Username cannot be more than 18 characters";
+            }
+            else if (checkName(nickNameBox.value))
+            {
+                nameWarningText = "Username is not appropriate";
+            }
+            else if (checkIfNameIsBlank(nickNameBox.value)) {
+                nameWarningText = "Username cannot be blank";
+            }
+            else if (typeof thisPlayer !== "undefined") {
+                var nameDuplicate = false;
+                for (var i = 0; i < globalHighScores.length; i++) {
+                    if (nickNameBox.value === globalHighScores[i].get("name") && playerId !== globalHighScores[i].get("idPlayer")) {
+                        nameDuplicate = true;
+                        break;
+                    }
+                }
+                if (nameDuplicate) {
+                    nameWarningText = "Username already taken";
+                }
+                else {
+                    nickName = nickNameBox.value;
+					localStorage.setItem("nick name", nickName);
+                    gameState = MENU;
+                    menuState = MENU;
+                }
+            }
+        }, false);*/
+
+        var drawingSurface = canvas.getContext("2d");
+
+        var updateTime = 0;
+        var adTime = 0;
+
+        var assestsToLoad = [];
+        var assestsLoaded = 0;
+		
+		var spriteObject =
+        {
+            sourceX: 0,
+            sourceY: 0,
+            sourceWidth: 64,
+            sourceHeight: 64,
+            x: 0,
+            y: 0,
+            width: 64,
+            height: 64,
+            centerX: function () {
+                return this.x + this.width / 2;
+            },
+            centerY: function () {
+                return this.y + this.height / 2;
+            },
+            halfWidth: function () {
+                return this.width / 2;
+            },
+            halfHeight: function () {
+                return this.height / 2;
+            },
+            vx: 0,
+            vy: 0,
+            rotation: 0,
+            alpha: 1.0,
+            shadow: false,
+            remove: false,
+            flipped: false,
+            animated: false,
+            flexible: false,
+            visible: true,
+            moveRatio: 1
+        };
+		
+		var launchWidth = 512;
+		var launchAlpha = 1;
+		var launchTime = -180;
+		
+		var launchImagesLoaded = 0;
+		
+		var launchImage = new Image();
+		launchImage.addEventListener("load", launchHandler, false);
+	
+		function launchHandler()
+		{
+			launchImagesLoaded++;
+			if (launchImagesLoaded >= 2)
+			{
+				launchImage.removeEventListener("load", launchHandler, false);
+				companyImage.removeEventListener("load", launchHandler, false);
+				
+				setVerticalAndHorizontalScale(MENUZOOMAMOUNT);
+
+				//resetGame();
+				//resetMenu();
+				
+				gameState = LAUNCH;
+				
+				update();
+			}
+		}
+		launchImage.src = "images/512x512logo.png";
+		
+		var companyImage = new Image();
+		companyImage.addEventListener("load", launchHandler, false);
+		companyImage.src = "images/SimplySevenStudios.png";
+
+        var ground = new Image();
+        ground.addEventListener("load", loadHandler, false);
+        ground.src = "images/ground.png";
+        assestsToLoad.push(ground);
+
+        var image = new Image();
+        image.addEventListener("load", loadHandler, false);
+        image.src = "images/SpeedyCar.png";
+        assestsToLoad.push(image);
+
+        var menuImage = new Image();
+        menuImage.addEventListener("load", loadHandler, false);
+        menuImage.src = "images/titleScreen.png";
+        assestsToLoad.push(menuImage);
+
+        var VOLUME = 0.5;
+
+        var carSound1 = new Audio("sounds/car-ignition.ogg");
+        carSound1.volume = VOLUME;
+        var carSound2 = new Audio("sounds/car-ignition.ogg");
+        carSound2.volume = VOLUME;
+        var carStarting = new Audio("sounds/carStart.ogg");
+        carStarting.volume = VOLUME * 4 / 5;
+        var scoreSound = new Audio("sounds/selectSound.ogg");
+        scoreSound.volume = VOLUME;
+        var deathSound = new Audio("sounds/death.ogg");
+        deathSound.volume = VOLUME;
+		
+		carSound1.load();
+		carSound2.load();
+		carStarting.load();
+		scoreSound.load();
+		deathSound.load();
+		
+		var music = new Audio("sounds/Move Forward.ogg")
+        music.loop = true;
+		music.load();
+		music.volume = VOLUME;
+		
+		var CocoonJSMusic = new CocoonJS.Music().setAudio(music);
+		
+		
+		if (localStorage.getItem("high score list") == null) {
+            localStorage.setItem("high score list", JSON.stringify([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]));
+			localStorage.setItem("high score dates", JSON.stringify(["", "", "", "", "", "", "", "", "", ""]));
+        }
+        var highscoresList = JSON.parse(localStorage.getItem("high score list"));
+        var highscoresDates = JSON.parse(localStorage.getItem("high score dates"));
+		
+
+        var hacked = (highscoresList[0] >= 1000);
+
+
+        //var HighScoresObject = Parse.Object.extend("HighScoresObject");
+        var PlayerObject = Parse.Object.extend("PlayerObject");
+        //var queryScore = new Parse.Query(HighScoresObject);
+        var queryPlayer = new Parse.Query(PlayerObject);
+        queryPlayer.greaterThan("score", 0);
+		queryPlayer.lessThan("score", 1000);
+        queryPlayer.notEqualTo("name", "");
+        queryPlayer.descending("score");
+        queryPlayer.limit(10000000);
+
+        var globalHighScores;
+
+        /*function getHighScores() {
+            queryScore.get("oBrlyIbYAs", {
+                success: function (highScoresObject) {
+                    setLocalGlobalHighScores(highScoresObject.get("scores"));
+                    updateGlobalHighscores2();
+                },
+                error: function (object, error) {
+                    console.log(JSON.stringify(object) + JSON.stringify(error));
+                }
+            });
+        }*/
+
+        function setLocalGlobalHighScores(scores) {
+            //globalHighScores = scores;
+            //console.log(globalHighScores);
+        }
+
+        function setHighScores() {
+            /*queryScore.get("oBrlyIbYAs", {
+                success: function (highScoresObject) {
+                    console.log(globalHighScores);
+                    highScoresObject.set("scores", globalHighScores);
+                    highScoresObject.save(null);
+                    getHighScores();
+                    console.log("set");
+                },
+                error: function (object, error) {
+                    console.log("failed");
+                    console.log(JSON.stringify(object) + JSON.stringify(error));
+                }
+            });*/
+        }
+
+        var playerId = localStorage.getItem("id");
+		
+		//queryThisPlayer.equalTo("idPlayer", playerId);
+        //queryThisPlayer.ascending("createdAt");
+        //queryThisPlayer.limit(1);
+		
+		var thisPlayer;
+		
+		
+		if (playerId === null) {
+			console.log(playerId);
+			console.log("this is before the error 1");
+			var NewThisPlayer = Parse.Object.extend("PlayerObject");
+			console.log("this is before the error 2");
+			var newThisPlayer = new PlayerObject();
+			console.log("this is before the error 3");
+			
+			newThisPlayer.set("score", highscoresList[0]);
+			newThisPlayer.set("name", nickName);
+			newThisPlayer.set("date", highscoresDates[0]);
+			
+			console.log("this is before the error 4");
+			
+			console.log(JSON.stringify(newThisPlayer));
+			newThisPlayer.save(null, {success: function() { 
+					console.log("this is before the error 5");
+					playerId = newThisPlayer.id;
+					console.log("playerid: " + playerId.toString());
+					
+					localStorage.setItem("id", playerId);
+			 
+					newThisPlayer.save(null, {success: function() {
+							console.log("this is before the error 6");
+					// the object was saved successfully.
+				    		var queryThisPlayer = new Parse.Query(PlayerObject);
+
+							queryThisPlayer.get(playerId, {
+								  success: function(obj) {
+										console.log("this is before the error 7");
+										thisPlayer = obj;
+										console.log(JSON.stringify(thisPlayer));
+										getHighScores();
+										console.log("this is before the error 8");
+
+									}
+										  
+										}, function(error) {
+										  // the save failed.
+											console.log("error");
+										});
+								}, error: function () {
+									console.log("an error occured here");
+								}}); }, error: function() { console.log("a different error has occured"); }});
+			
+			
+			
+			
+        }
+		else
+		{
+			console.log("Going This Way in the game");
+			var queryThisPlayer = new Parse.Query(PlayerObject);
+			console.log(playerId);
+			queryThisPlayer.get(playerId, {
+						  success: function(obj) {
+								thisPlayer = obj;
+								console.log(JSON.stringify(thisPlayer));
+								getHighScores();
+								console.log("sucessssss!");
+
+							}
+								  
+								}, function(error) {
+								  // the save failed.
+									console.log("error");
+								});
+			
+		}
+		
+		
+		getHighScores();
+		
+		
+		console.log(playerId);
+		
+				
+
+        var playerSpotNum = 0;
+
+        
+
+        function getHighScores() {
+            queryPlayer.find({
+                success: function (results) {
+					globalHighScores = [];
+					for (var i = 0; i < results.length; i++)
+					{
+						globalHighScores.push([results[i].get("name"), results[i].get("score"), results[i].get("date"), results[i].id]);
+					}
+					console.log(playerId);
+					
+
+                },
+                error: function (error) {
+
+                }
+            });
+        }
+
+        /*if (typeof globalHighScores === "undefined" && false) {
+            globalHighScores = [];
+            globalHighScores.push([nickName, highscoresList[0], highscoresDates[0], playerId]);
+            setHighScores();
+        }*/
+
+        function findGlobalPlayerNum() {
+            /*if (typeof globalHighScores !== "undefined") {
+                for (var i = 0; i < globalHighScores.length; i++) {
+                    if (playerId === globalHighScores[i][3]) {
+                        return i;
+                    }
+                }
+            }*/
+            return false;
+        }
+
+        updateGlobalHighscores();
+
+        function compare(a,b) {
+            if (a[1] < b[1])
+                return 1;
+            if (a[1] > b[1])
+                return -1;
+            return 0;
+        }
+
+        function updateGlobalHighscores() {
+
+            /*console.log("update 1");
+            if (typeof globalHighScores !== "undefined" && !hacked) {
+                if (typeof globalHighScores[0] !== "undefined") {
+                    if (findGlobalPlayerNum() !== false) {
+                        if (highscoresList[0] > globalHighScores[findGlobalPlayerNum()][1] || (findGlobalPlayerNum() !== 0 && highscoresList[0] > globalHighScores[findGlobalPlayerNum() - 1][1])) {
+                            getHighScores();
+                        }
+                    }
+                    else {
+                        getHighScores();
+                    }
+                }
+                else {
+                    getHighScores();
+                }
+            }*/
+			console.log("thisPlayer:" + JSON.stringify(thisPlayer));
+            if (typeof thisPlayer !== "undefined") {
+				console.log("isthisbeforetheerror");
+                if (highscoresList[0] !== thisPlayer.get("score") || nickName !== thisPlayer.get("name")) {
+                    thisPlayer.set("score", highscoresList[0]);
+                    thisPlayer.set("name", nickName);
+                    thisPlayer.set("date", highscoresDates[0]);
+					
+					console.log("is this now before the error");
+					console.log(JSON.stringify(thisPlayer));
+					
+                    thisPlayer.save(null, {
+                        success: function (obj) {
+                            globalHighScores.sort(compare);
+                        },
+                        error: function (error) {
+							console.log("is this the error?");
+                        }
+                    });
+                }
+            }
+        }
+
+        /*function updateGlobalHighscores2() {
+            console.log("update 2");
+            if (typeof globalHighScores !== "undefined" && !hacked) {
+                if (typeof globalHighScores[0] !== "undefined") {
+                    if (findGlobalPlayerNum() !== false) {
+                        if (highscoresList[0] > globalHighScores[findGlobalPlayerNum()][1] || (findGlobalPlayerNum() !== 0 && highscoresList[0] > globalHighScores[findGlobalPlayerNum() - 1][1])) {
+                            console.log("going more");
+                            globalHighScores[findGlobalPlayerNum()][0] = nickName;
+                            globalHighScores[findGlobalPlayerNum()][1] = highscoresList[0];
+                            globalHighScores[findGlobalPlayerNum()][2] = highscoresDates[0];
+
+                            var tempHighScores = [];
+                            var deposit = false;
+                            var putInScore = false;
+                            for (var i = 0; i < globalHighScores.length; i++) {
+                                if (i !== findGlobalPlayerNum()) {
+                                    if (globalHighScores[i][1] >= highscoresList[0]) {
+                                        console.log("regular push");
+                                        tempHighScores.push(globalHighScores[i]);
+                                    }
+                                    else {
+                                        console.log("special push");
+                                        deposit = true;
+                                        if (!putInScore) {
+                                            tempHighScores.push(globalHighScores[findGlobalPlayerNum()]);
+                                            putInScore = true;
+                                        }
+                                        tempHighScores.push(globalHighScores[i]);
+                                    }
+                                }
+                            }
+                            if (!deposit) {
+                                console.log("no deposit");
+                                tempHighScores.push(globalHighScores[findGlobalPlayerNum()]);
+                            }
+
+                            globalHighScores = tempHighScores;
+                            setHighScores();
+
+                            if (!deposit) {
+                                updateGlobalHighscores();
+                            }
+
+                        }
+                    }
+                    else {
+                        globalHighScores.push([nickName, highscoresList[0], highscoresDates[0], playerId]);
+                        setHighScores();
+                    }
+                }
+                else {
+                    globalHighScores.push([nickName, highscoresList[0], highscoresDates[0], playerId]);
+                    setHighScores();
+                }
+            }
+        }
+        */
+
+		var muted = localStorage.getItem("muted");
+		if (muted === null)
+		{
+			console.log("TTTTTTTTTTTTTTTHHHHHHHHHHHHHHHHIIIIIIIIIIIIIIIIIIISSSSSSSSSSSSSSSSSSSSSS SHHHHHHHHHOOOOOOOOOOOOOOOOOOOUUUUUUUUUULLLLLLLLLLDDDDDDDDDDDDD NOT HAPPEN!!!!!!");
+			muted = "false";
+			localStorage.setItem("muted", muted);
+		}
+		console.log("muted");
+		console.log(muted);
+		
+		var mutedMusic = localStorage.getItem("mutedMusic");
+		if (mutedMusic === null)
+		{
+			mutedMusic = "false";
+			localStorage.setItem("mutedMusic", mutedMusic);
+		}
+		
+		var tutorial = localStorage.getItem("tutorial");
+		console.log(tutorial);
+		if (tutorial === null)
+		{
+			console.log("thisshouldnothappen");
+			console.log(tutorial);
+			tutorial = true;
+			localStorage.setItem("tutorial", false);
+		}
+		
+		var daysInRow = localStorage.getItem("daysInRow");
+        if (daysInRow === null) {
+            daysInRow = 1;
+            localStorage.setItem("daysInRow", daysInRow);
+        }
+		
+		var millennium =new Date(2000, 0, 1) //Month is 0-11 in JavaScript
+		var today=new Date()
+		
+		var one_day=1000*60*60*24;
+		
+		var totalDays = Math.ceil((today.getTime()-millennium.getTime())/(one_day));
+		
+		var lastDate = localStorage.getItem("lastDate");
+		if (lastDate === null) {
+            lastDate = totalDays;
+            localStorage.setItem("lastDate", lastDate);
+        }
+		
+		if (totalDays - lastDate === 1)
+		{
+			daysInRow++;
+			localStorage.setItem("daysInRow", daysInRow);
+		}
+		else if (totalDays - lastDate > 1)
+		{
+			daysInRow = 1;
+			localStorage.setItem("daysInRow", daysInRow);
+		}
+
+        var over100 = localStorage.getItem("over100");
+        if (over100 === null) {
+            over100 = 0;
+            localStorage.setItem("over100", over100);
+        }
+		
+		var over100record = localStorage.getItem("over100record");
+        if (over100record === null) {
+            over100record = 0;
+            localStorage.setItem("over100record", over100record);
+        }
+		
+		console.log("over100 and over100record");
+		console.log(over100)
+		console.log(over100record)
+		
+		
+		var selectedCar = localStorage.getItem("selectedCar");
+		if (selectedCar === null)
+		{
+			selectedCar = 0;
+			localStorage.setItem("selectedCar", selectedCar);
+		}
+		
+		var firstTime = localStorage.getItem("firstTime");
+		if (firstTime === null)
+		{
+			firstTime = true;
+			localStorage.setItem("firstTime", firstTime);
+		}
+		
+		var review = localStorage.getItem("review");
+		if (review === null)
+		{
+			review = "false";
+			localStorage.setItem("review", review);
+		}
+		
+        var timesPlayed = localStorage.getItem("timesPlayed");
+		if (timesPlayed === null)
+		{
+			timesPlayed = 0;
+			localStorage.setItem("timesPlayed", timesPlayed);
+		}
+
+		var currentCar = localStorage.getItem("currentCar");
+		if (currentCar === null)
+		{
+			currentCar = 0;
+			localStorage.setItem("currentCar", currentCar);
+		}
+
+		var currentScreen = localStorage.getItem("currentScreen");
+		if (currentScreen === null)
+		{
+			currentScreen = 0;
+			localStorage.setItem("currentScreen", currentScreen);
+		}
+
+        
+		
+		var buttonObject = Object.create(spriteObject);
+        buttonObject.height = 200;
+        buttonObject.width = 200;
+        buttonObject.sourceHeight = 200;
+        buttonObject.sourceWidth = 200;
+        buttonObject.sourceX = 300;
+        buttonObject.sourceY = 94;
+        buttonObject.wasDown = false;
+        buttonObject.state = MENU;
+        buttonObject.changed = false;
+		buttonObject.active = true;
+        buttonObject.flexible = false;
+
+        var carObject = Object.create(spriteObject);
+        carObject.sourceX = 0;
+        carObject.sourceY = 0;
+        carObject.sourceHeight = 93;
+        carObject.sourceWidth = 49;
+        carObject.height = 94;
+        carObject.width = 50;
+        carObject.speed = 0;
+        carObject.ySpeed = 5;
+        carObject.xSpeed = 0;
+        carObject.maxSpeed = 3.5;
+        carObject.state = "starting";
+        carObject.accel = 0;
+		
+		var carButtonObject = Object.create(carObject);
+		carButtonObject.height = 188;
+		carButtonObject.width = 100;
+
+        var availableCars = [];
+		var carPage = 1;
+        var carX = 267;
+		var carY = 285;
+		var carSpacing = 105;
+        var NUMOFCARS = 16;
+        var LOCKCARNUM = 13;
+        var hoverCar = 0;
+        var carsOwned = 0;
+        var carSources = [0, 1, 2, 3, 4, 5, 14, 6, 7, 8, 9, 10, 15, 16, 11, 12]
+        var carScores = [0, 25, 25, 25, 25, 25, 25, 50, 75, 100, 200, 300, 100, 5, 100000000, 1000000000];
+        var carName = ["Red", "Blue", "Green", "Yellow", "Pink", "Orange", "Purple", "Bronze", "Random", "Silver", "Gold", "Platinum", "The Torch", "Dragon Buster", "White Phantom", "Black Phantom"];
+        var carUnlockTypes = ["Score", "Score", "Score", "Score", "Score", "Score", "Score", "Score", "Score", "Score", "Score", "Score", "Games", "Row", "Donate", "Donate"];
+        var highestCarNum = 0;
+
+        getAvailableCars();
+
+        var carButtons = [];
+
+        for (var i = 0; i < availableCars.length; i++) {
+            var newCarButton = Object.create(carButtonObject);
+            if (i > (availableCars.length - 1) / 2) {
+                newCarButton.y = carY;
+                newCarButton.x = carX + ((i - Math.ceil(availableCars.length / 2)) * carSpacing);
+            }
+            else {
+                newCarButton.y = carY;
+                newCarButton.x = carX + (i * carSpacing);
+            }
+            newCarButton.sourceX = availableCars[i] * 50;
+			newCarButton.alpha = .5;
+            newCarButton.changed = false;
+            newCarButton.wasDown = false;
+            carButtons.push(newCarButton);
+        }
+
+        function getAvailableCars() {
+            for (var i = 0; i < NUMOFCARS; i++) {
+                if (carUnlockTypes[i] === "Score") {
+                    if (highscoresList[0] >= carScores[i]) {
+                        availableCars.push(carSources[i]);
+                        highestCarNum = i;
+                        carsOwned += 1;
+                    }
+                    else {
+                        availableCars.push(LOCKCARNUM);
+                    }
+                }
+				else if (carUnlockTypes[i] === "Days") {
+                    if (daysInRow >= 7) {
+                        availableCars.push(carSources[i]);
+                        highestCarNum = i;
+                    }
+                    else {
+                        availableCars.push(LOCKCARNUM);
+                    }
+                }
+				else if (carUnlockTypes[i] === "Games") {
+                    if (timesPlayed >= carScores[i]) {
+                        availableCars.push(carSources[i]);
+                        highestCarNum = i;
+                    }
+                    else {
+                        availableCars.push(LOCKCARNUM);
+                    }
+                }
+                else if (carUnlockTypes[i] === "Row") {
+                    if (over100record >= carScores[i]) {
+                        availableCars.push(carSources[i]);
+                        highestCarNum = i;
+                    }
+                    else
+                    {
+                        availableCars.push(LOCKCARNUM);
+                    }
+                }
+                else if (carUnlockTypes[i] === "Donate") {
+                    if (donated) {
+                        availableCars.push(carSources[i]);
+                        highestCarNum = i;
+                    }
+                    else {
+                        availableCars.push(LOCKCARNUM);
+                    }
+                }
+            }
+        }
+
+        var screenSelectObject = Object.create(spriteObject);
+        screenSelectObject.sourceY = 819;
+        screenSelectObject.sourceX = 300;
+        screenSelectObject.sourceHeight = 122;
+        screenSelectObject.sourceWidth = 210;
+        screenSelectObject.height = 122;
+        screenSelectObject.width = 210;
+        screenSelectObject.alpha = 0;
+
+        var screenButtonObject = Object.create(spriteObject);
+        screenButtonObject.sourceY = 697;
+        screenButtonObject.sourceX = 300;
+        screenButtonObject.sourceHeight = 122;
+        screenButtonObject.sourceWidth = 210;
+        screenButtonObject.height = 122;
+        screenButtonObject.width = 210;
+        screenButtonObject.wasDown = false;
+        screenButtonObject.changed = false;
+		screenButtonObject.active = true;
+		screenButtonObject.showWhenTransitioning = false;
+
+        var availableScreens = [];
+        var screenX = 830;
+        var NUMOFSCREENS = 14;
+        var LOCKSCREENNUM = 3;
+        var hoverScreen = 0;
+        var screensOwned = 0;
+        var screenRatios = [1, .3, 1];
+        var screenFlippeds = [false, false, true];
+        var screenSources = [0, 1, 2]
+        var screenScores = [0, 150, 250];
+        var screenNames = ["Grass", "Outer Space", "Lava"];
+        var screenUnlockTypes = ["Score", "Score", "Score"];
+
+        var screenButtons = [];
+
+        getAvaiableScreens();
+
+        for (var i = 0; i < availableScreens.length; i++) {
+            var newScreenButton = Object.create(screenButtonObject);
+            newScreenButton.y = 350;
+            newScreenButton.x = screenX + ((i - Math.ceil(availableScreens.length / 2)) * 250);
+
+            newScreenButton.sourceX = 300 + (availableScreens[i] * newScreenButton.sourceWidth);
+            newScreenButton.changed = false;
+            newScreenButton.wasDown = false;
+            screenButtons.push(newScreenButton);
+        }
+
+        function getAvaiableScreens() {
+            for (var i = 0; i < NUMOFSCREENS; i++) {
+                if (screenUnlockTypes[i] === "Score") {
+                    if (highscoresList[0] >= screenScores[i]) {
+                        availableScreens.push(screenSources[i]);
+                        screensOwned += 1;
+                    }
+                    else {
+                        availableScreens.push(LOCKSCREENNUM);
+                    }
+                }
+                else if (screenUnlockTypes[i] === "Donate") {
+                    if (testDonation()) {
+                        availableScreens.push(screenSources[i]);
+                    }
+                    else {
+                        availableScreens.push(LOCKSCREENNUM);
+                    }
+                }
+            }
+        }
+
+        if (muted === "true") {
+            carSound1.volume = 0;
+            carSound2.volume = 0;
+            carStarting.volume = 0;
+            deathSound.volume = 0;
+            scoreSound.volume = 0;
+		}
+		if (mutedMusic === "true") {
+			music.volume = 0;
+		}
+
+        var display = true;
+
+        var sprites, car, banners, bannerScores, moveLeft, moveRight, rightSide, leftSide, enter, roads, roadSpotX, roadSpotY, grounds, roadDirection, cameramx, onRoad, score, waitCounter, carScreen, zoomCar, wasDown, newHighScore, newCarUnlocked, displayCars, unlockedCarName, scoreTransparency, buttons, gameTime, moveTime, transitioning, roadsAdded;
+
+        var blackScreen = Object.create(spriteObject);
+        blackScreen.width = 1366;
+        blackScreen.height = 768;
+        blackScreen.sourceHeight = 1;
+        blackScreen.sourceWidth = 1;
+        blackScreen.sourceX = 25;
+        blackScreen.sourceY = 35;
+        blackScreen.alpha = 0.5;
+		
+		var sideBar = Object.create(spriteObject);
+        sideBar.width = Math.floor(1366 / 3);
+        sideBar.height = 768;
+        sideBar.sourceHeight = 1;
+        sideBar.sourceWidth = 1;
+        sideBar.sourceX = 25;
+        sideBar.sourceY = 35;
+		sideBar.y = -768
+        sideBar.alpha = 0.75;
+		
+		var notification = Object.create(spriteObject);
+        notification.width = 700;
+        notification.height = 100;
+        notification.sourceHeight = 1;
+        notification.sourceWidth = 1;
+        notification.sourceX = 25;
+        notification.sourceY = 35;
+		notification.y = 100;
+		notification.x = -notification.width;
+        notification.alpha = .75;
+		
+		infoButton = Object.create(buttonObject);
+        infoButton.x = 5;
+        infoButton.y = 5;
+        infoButton.sourceY = 546;
+        infoButton.sourceX = 1600;
+        infoButton.width = 75;
+        infoButton.sourceWidth = 50;
+        infoButton.sourceHeight = 50;
+        infoButton.height = 75;
+        infoButton.action = function () {
+			lastState = menuState;
+			menuState = SIDEBAR;
+        };
+        infoButton.state = MENU;
+        infoButton.flexible = false;
+        infoButton.changePos = function () { this.x = 5 + (horizontalOffset / 2); this.y = 5 + (verticalOffset / 2);};
+
+        var roadObject = Object.create(spriteObject);
+        roadObject.sourceY = 131;
+        roadObject.sourceHeight = 210;
+        roadObject.sourceWidth = 94;
+        roadObject.height = 210;
+        roadObject.width = 94;
+        roadObject.offsetX = 0;
+        roadObject.collisionType = 1;
+        roadObject.passed = false;
+		roadObject.shouldCollide = [];
+		roadObject.shouldNotCollide = [];
+
+        var roadCurveObject = Object.create(spriteObject);
+        roadCurveObject.sourceY = 131;
+        roadCurveObject.sourceX = 95;
+        roadCurveObject.sourceHeight = 178;
+        roadCurveObject.sourceWidth = 178;
+        roadCurveObject.height = 178;
+        roadCurveObject.width = 178;
+        roadCurveObject.offsetX = 0;
+        roadCurveObject.collisionType = 2;
+        roadCurveObject.passed = false;
+		roadCurveObject.shouldCollide = [];
+		roadCurveObject.shouldNotCollide = [];
+
+        var roadCurveLeftObject = Object.create(spriteObject);
+        roadCurveLeftObject.sourceY = 131;
+        roadCurveLeftObject.sourceX = 95;
+        roadCurveLeftObject.sourceHeight = 178;
+        roadCurveLeftObject.sourceWidth = 178;
+        roadCurveLeftObject.height = 178;
+        roadCurveLeftObject.width = 178;
+        roadCurveLeftObject.flipped = true;
+        roadCurveLeftObject.offsetX = 0;
+        roadCurveLeftObject.collisionType = 2;
+        roadCurveLeftObject.passed = false;
+		roadCurveLeftObject.shouldCollide = [];
+		roadCurveLeftObject.shouldNotCollide = [];
+
+        var roadCurveBackRightObject = Object.create(spriteObject);
+        roadCurveBackRightObject.sourceY = 131;
+        roadCurveBackRightObject.sourceX = 95;
+        roadCurveBackRightObject.sourceHeight = 178;
+        roadCurveBackRightObject.sourceWidth = 178;
+        roadCurveBackRightObject.height = 178;
+        roadCurveBackRightObject.width = 178;
+        roadCurveBackRightObject.rotation = 0;
+        roadCurveBackRightObject.flippedh = true;
+        roadCurveBackRightObject.offsetX = 0;
+        roadCurveBackRightObject.collisionType = 2;
+        roadCurveBackRightObject.passed = false;
+		roadCurveBackRightObject.shouldCollide = [];
+		roadCurveBackRightObject.shouldNotCollide = [];
+
+        var roadCurveBackLeftObject = Object.create(spriteObject);
+        roadCurveBackLeftObject.sourceY = 131;
+        roadCurveBackLeftObject.sourceX = 95;
+        roadCurveBackLeftObject.sourceHeight = 178;
+        roadCurveBackLeftObject.sourceWidth = 178;
+        roadCurveBackLeftObject.height = 178;
+        roadCurveBackLeftObject.width = 178;
+        roadCurveBackLeftObject.flipped = true;
+        roadCurveBackLeftObject.flippedh = true;
+        roadCurveBackLeftObject.rotation = 0;
+        roadCurveBackLeftObject.offsetX = 84;
+        roadCurveBackLeftObject.collisionType = 2;
+        roadCurveBackLeftObject.passed = false;
+		roadCurveBackLeftObject.shouldCollide = [];
+		roadCurveBackLeftObject.shouldNotCollide = [];
+
+        var roadSideWaysObject = Object.create(spriteObject);
+        roadSideWaysObject.sourceY = 341;
+        roadSideWaysObject.sourceHeight = 94;
+        roadSideWaysObject.sourceWidth = 210;
+        roadSideWaysObject.height = 94;
+        roadSideWaysObject.width = 210;
+        roadSideWaysObject.collisionType = 1;
+        roadSideWaysObject.passed = false;
+		roadSideWaysObject.shouldCollide = [];
+		roadSideWaysObject.shouldNotCollide = [];
+		
+		var shouldCollideCircle = Object.create(spriteObject);
+		shouldCollideCircle.visible = false;
+		shouldCollideCircle.height = 168;
+		shouldCollideCircle.width = 168;
+		
+		var shouldNotCollideCircle = Object.create(spriteObject);
+		shouldNotCollideCircle.visible = false;
+		shouldNotCollideCircle.height = 356;
+		shouldNotCollideCircle.width = 356;
+
+        var down = false;
+        var clickedDown = false;
+
+        var UP = 38;
+        var DOWN = 40;
+        var LEFT = 37;
+        var RIGHT = 39;
+
+        var SPACE = 32;
+
+        var score = 0;
+
+        var catAlive = true;
+
+
+        var pointerX = 0;
+        var pointerY = 0;
+
+        var playButton, backGroundsButton, menuBackGround, targetRotation, resumeButton, menuButton, menuTime;
+
+        
+
+        var menuBackGround = Object.create(spriteObject);
+        menuBackGround.sourceWidth = 1366;
+        menuBackGround.sourceHeight = 768;
+        menuBackGround.width = 1366;
+        menuBackGround.height = 768;
+
+        menuButton = Object.create(buttonObject);
+        menuButton.sourceY = 597;
+        menuButton.width = 600;
+        menuButton.sourceWidth = 600;
+        menuButton.sourceHeight = 98;
+        menuButton.height = 100;
+        menuButton.x = (1366 / 2) - (menuButton.width / 2);
+        menuButton.y = 400;
+        menuButton.action = function () { menuState = MENU; gameState = MENU; setVerticalAndHorizontalScale(MENUZOOMAMOUNT); resetMenu(); };
+        menuButton.state = PAUSE;
+        menuButton.text = "Menu";
+        menuButton.textX = function () { return this.x + 225 };
+        menuButton.textY = function () { return this.y + 10; };
+
+        pauseButton = Object.create(buttonObject);
+        pauseButton.x = 1261;
+        pauseButton.y = 5;
+        pauseButton.sourceY = 496;
+        pauseButton.sourceX += 400;
+        pauseButton.width = 100;
+        pauseButton.sourceWidth = 100;
+        pauseButton.sourceHeight = 100;
+        pauseButton.height = 100;
+        pauseButton.action = function () { gameState = PAUSE; setVerticalAndHorizontalScale(PLAYZOOMAMOUNT); resetPause(); menuState = PAUSE; };
+        pauseButton.state = PLAYING;
+        pauseButton.flexible = true;
+        pauseButton.changePos = function () { this.x = 1261 - (horizontalOffset / 2); this.y = 5 + (verticalOffset / 2);};
+
+        resumeButton = Object.create(buttonObject);
+        resumeButton.sourceY = 597;
+        resumeButton.width = 600;
+        resumeButton.sourceWidth = 600;
+        resumeButton.sourceHeight = 98;
+        resumeButton.height = 100;
+        resumeButton.x = (1366 / 2) - (resumeButton.width / 2);
+        resumeButton.y = 250;
+        resumeButton.action = function () {
+			setVerticalAndHorizontalScale(PLAYZOOMAMOUNT);
+            gameState = PLAYING;
+            menuState = PLAYING;
+            if (car.state === "going") {
+                carSound1.play();
+            }
+            else {
+                carStarting.play();
+            }
+        };
+        resumeButton.state = PAUSE;
+        resumeButton.text = "Resume";
+        resumeButton.textX = function () { return this.x + 200 };
+        resumeButton.textY = function () { return this.y + 10; };
+
+        playAgainButton = Object.create(buttonObject);
+        playAgainButton.sourceY = 597;
+        playAgainButton.width = 600;
+        playAgainButton.sourceWidth = 600;
+        playAgainButton.sourceHeight = 98;
+        playAgainButton.height = 100;
+        playAgainButton.x = (1366 / 2) - (playAgainButton.width / 2);
+        playAgainButton.y = 350;
+        playAgainButton.action = function () {
+			
+			setVerticalAndHorizontalScale(PLAYZOOMAMOUNT);
+			
+            gameState = PLAYING;
+            menuState = PLAYING;
+            resetGame();
+            blackScreen.alpha = 1;
+        };
+        playAgainButton.state = WAITING;
+        playAgainButton.text = "Play Again";
+        playAgainButton.textX = function () { return this.x + 150 };
+        playAgainButton.textY = function () { return this.y + 10; };
+        playAgainButton.flexible = true;
+        playAgainButton.changePos = function () { this.x = (canvas.width / (2 * horizontalScale)) - (horizontalOffset / 2) - (this.width / 2); };
+
+        globalHighScoresButton = Object.create(buttonObject);
+        globalHighScoresButton.sourceY = 597;
+        globalHighScoresButton.width = 300;
+        globalHighScoresButton.sourceWidth = 600;
+        globalHighScoresButton.sourceHeight = 98;
+        globalHighScoresButton.height = 50;
+        globalHighScoresButton.x = (1366 / 2) - (globalHighScoresButton.width / 2);
+        globalHighScoresButton.y = 502;
+        globalHighScoresButton.sourceX = 1500;
+        globalHighScoresButton.action = function () {
+            if (rankState === LOCAL) {
+                rankState = GLOBAL;
+                this.text = "Local";                
+            }
+            else {
+                rankState = LOCAL;
+                this.text = "Global";
+
+            }
+        };
+        globalHighScoresButton.state = RANKS;
+        globalHighScoresButton.text = "Global";
+        globalHighScoresButton.textX = function () {
+            if (rankState === LOCAL) {
+                return this.x + 100;
+            }
+            else {
+                return this.x + 110;
+            } 
+        };
+        globalHighScoresButton.textY = function () { return this.y + 5; };
+		
+		
+        backButton = Object.create(buttonObject);
+        backButton.x = 8;
+        backButton.y = WINDOWHEIGHT - 8 - 65;
+        backButton.sourceY = 496;
+        backButton.width = 130;
+        backButton.sourceWidth = 200;
+        backButton.sourceHeight = 100;
+        backButton.height = 65;
+        backButton.action = function () {
+            menuState = MENU;
+            blackScreen.alpha = 1;
+            gameTime = 0;
+            muteButton.state = MENU;
+			muteMusicButton.state = MENU;
+			
+			canSelectCars = false;
+
+            followButton.state = menuState;
+            likeButton.state = menuState;
+            donateButton.state = menuState;
+			infoButton.state = menuState;
+
+            //scoresText.style.visibility = "hidden";
+            globalHighScoresButton.text = "Global";
+
+            rankState = LOCAL;
+        };
+        backButton.state = RANKS;
+        backButton.flexible = false;
+        backButton.changePos = function () { this.x = 8 + (horizontalOffset / 2); this.y = (canvas.height / verticalScale + verticalOffset/2) - 8 - this.height};
+		
+		pageUpButton = Object.create(backButton);
+        pageUpButton.x = (1366 / 2) - (globalHighScoresButton.width / 2) - 30 - 100;
+        pageUpButton.y = 502;
+        pageUpButton.width = 100;
+        pageUpButton.height = 50;
+        pageUpButton.action = function () {
+            page -= 1;
+			page = Math.max(page, 1);
+			
+			
+        };
+        pageUpButton.state = RANKS;
+		pageUpButton.flexible = false;
+		
+		pageDownButton = Object.create(backButton);
+        pageDownButton.x = (1366 / 2) + (globalHighScoresButton.width / 2) + 30;
+        pageDownButton.y = 502;
+        pageDownButton.width = 100;
+        pageDownButton.height = 50;
+        pageDownButton.action = function () {
+            page += 1;									
+        };
+        pageDownButton.state = RANKS;
+		pageDownButton.flipped = true;
+		pageDownButton.flexible = false;
+
+        muteButton = Object.create(buttonObject);
+        muteButton.x = 1211;
+        muteButton.y = 5;
+        muteButton.sourceY = 496;
+		console.log("muteButtonState")
+        if (muted == "true") {
+			console.log(muted);
+            muteButton.sourceX += 600;
+            muteButton.soundState = 0;
+			carSound1.volume = 0;
+            carSound2.volume = 0;
+            carStarting.volume = 0;
+            deathSound.volume = 0;
+            scoreSound.volume = 0;
+            this.soundState = 0;
+        }
+        else {
+			console.log(muted);
+            muteButton.sourceX += 800;
+            muteButton.soundState = VOLUME;
+        }
+        muteButton.width = 75;
+        muteButton.sourceWidth = 100;
+        muteButton.sourceHeight = 100;
+        muteButton.height = 75;
+        muteButton.action = function () {
+            if (this.soundState === VOLUME) {
+                carSound1.volume = 0;
+                carSound2.volume = 0;
+                carStarting.volume = 0;
+                deathSound.volume = 0;
+                scoreSound.volume = 0;
+                this.soundState = 0;
+                this.sourceX -= 200;
+                muted = "true";
+				localStorage.setItem("muted", muted);
+            }
+            else if (this.soundState === 0) {
+                carSound1.volume = VOLUME;
+                carSound2.volume = VOLUME;
+                carStarting.volume = VOLUME * 4 / 5;
+                deathSound.volume = VOLUME / 4;
+                scoreSound.volume = VOLUME;
+                this.soundState = VOLUME;
+                this.sourceX += 200;
+                muted = "false";
+				localStorage.setItem("muted", muted);
+
+            }
+        };
+        muteButton.state = PAUSE;
+        muteButton.flexible = true;
+        muteButton.changePos = function () { this.x = 1236 - (horizontalOffset / 2); this.y = 5 + (verticalOffset / 2); };
+		
+		muteMusicButton = Object.create(buttonObject);
+        muteMusicButton.x = 1211;
+        muteMusicButton.y = 5;
+        muteMusicButton.sourceY = 496;
+        if (mutedMusic == "true") {
+            muteMusicButton.sourceX += 1800;
+            muteMusicButton.soundState = 0;
+			music.volume = 0;
+        }
+        else {
+            muteMusicButton.sourceX += 1600;
+            muteMusicButton.soundState = VOLUME;
+        }
+        muteMusicButton.width = 75;
+        muteMusicButton.sourceWidth = 100;
+        muteMusicButton.sourceHeight = 100;
+        muteMusicButton.height = 75;
+        muteMusicButton.action = function () {
+            if (this.soundState === VOLUME) {
+				music.volume = 0;
+                this.soundState = 0;
+                this.sourceX += 200;
+                mutedMusic = "true";
+				localStorage.setItem("mutedMusic", mutedMusic);
+            }
+            else if (this.soundState === 0) {
+				music.volume = VOLUME;
+                this.soundState = VOLUME;
+                this.sourceX -= 200;
+                mutedMusic = "false";
+				localStorage.setItem("mutedMusic", mutedMusic);
+
+            }
+        };
+        muteMusicButton.state = PAUSE;
+        muteMusicButton.flexible = true;
+        muteMusicButton.changePos = function () { this.x = 1146 - (horizontalOffset / 2); this.y = 5 + (verticalOffset / 2); };
+
+        nameButton = Object.create(buttonObject);
+        nameButton.x = 1160;
+        nameButton.y = 5;
+        nameButton.sourceY = 1500;
+        nameButton.width = 156;
+        nameButton.sourceWidth = 1;
+        nameButton.sourceHeight = 1;
+        nameButton.height = 60;
+        nameButton.action = function () {
+            if (typeof thisPlayer !== "undefined") {
+                /*menuState = MENU;
+                nameButton.state = menuState;
+                muteButton.state = menuState;
+				muteMusicButton.state = menuState;
+                likeButton.state = menuState;
+                followButton.state = menuState;
+                donateButton.state = menuState;
+				infoButton.state = menuState;*/
+				
+				isNaming = true;
+				cocoonjsName();
+            }
+        };
+        nameButton.state = MENU;
+        nameButton.flexible = false;
+        nameButton.changePos = function () { this.x = 1041 - (horizontalOffset / 2); this.y = 110; };
+
+        donateButton = Object.create(buttonObject);
+        donateButton.x = 1041;
+        donateButton.y = 5;
+        donateButton.sourceY = 496;
+        donateButton.sourceX = 1300;
+        donateButton.width = 225;
+        donateButton.sourceWidth = 150;
+        donateButton.sourceHeight = 50;
+        donateButton.height = 75;
+        donateButton.action = function () {
+			if (canPurchase)
+			{
+				if (donated === false)
+				{				
+					console.log("Begining Purchase.");
+
+					CocoonJS.Store.purchaseProduct(productId);
+					
+					CocoonJS.Store.onProductPurchaseCompleted.addEventListener(function(purchaseInfo){
+						console.log("onProductPurchaseCompleted");
+						console.log(JSON.stringify(arguments));
+						
+						CocoonJS.Store.addPurchase(purchaseInfo);
+						CocoonJS.Store.consumePurchase(purchaseInfo.transactionId, purchaseInfo.productId);
+						CocoonJS.Store.finishPurchase(purchaseInfo.transactionId);
+						
+						donated = true;
+						//CocoonJS.Ad.hideBanner();
+						donateButton.active = false;
+					});
+				}
+				else {
+					console.log("You have already purchased this product.");
+				}
+			}
+			else {
+				console.log("Store is currently Unavailable");
+			}
+					
+        };
+        donateButton.state = MENU;
+        donateButton.flexible = true;
+        donateButton.changePos = function () { this.x = 726 - (horizontalOffset / 2); this.y = 5 + (verticalOffset / 2); };
+		if (donated === true)
+		{
+			donateButton.active = false;
+		}
+		
+        followButton = Object.create(buttonObject);
+        followButton.x = 821;
+        followButton.y = 5;
+        followButton.sourceY = 546;
+        followButton.sourceX = 1800;
+        followButton.width = 75;
+        followButton.sourceWidth = 50;
+        followButton.sourceHeight = 50;
+        followButton.height = 75;
+        followButton.action = function () {
+			var win = window.open("https://twitter.com/CurvyCar" , '_blank');
+			win.focus();
+        };
+        followButton.state = MENU;
+        followButton.flexible = true;
+        followButton.changePos = function () { this.x = 966 - (horizontalOffset / 2); this.y = 5 + (verticalOffset / 2);};
+
+        likeButton = Object.create(buttonObject);
+        likeButton.x = 821;
+        likeButton.y = 5;
+        likeButton.sourceY = 546;
+        likeButton.sourceX = 1700;
+        likeButton.width = 75;
+        likeButton.sourceWidth = 50;
+        likeButton.sourceHeight = 50;
+        likeButton.height = 75;
+        likeButton.action = function () {
+			var win = window.open("https://facebook.com/CurvyCar" , '_blank');
+			win.focus();
+        };
+        likeButton.state = MENU;
+        likeButton.flexible = true;
+        likeButton.changePos = function () { this.x = 1056 - (horizontalOffset / 2); this.y = 5 + (verticalOffset / 2);};
+		
+
+        playButton = Object.create(buttonObject);
+        playButton.sourceY = 94;
+        playButton.x = 225;
+        playButton.y = 350;
+        playButton.action = function () {
+            car.sourceX = 50 * currentCar;
+            if (currentCar === 7) {
+                var lastSourceX = car.sourceX;
+                while (true) {
+                    car.sourceX = carSources[Math.floor(Math.random() * carsOwned)] * 50;
+                    if (!(car.sourceX === 7 * 50 || lastSourceX === car.sourceX)) {
+                        break;
+                    }
+                }
+            }
+            transitioning = true;
+            blackScreen.alpha = 0;
+        };
+		playButton.showWhenTransitioning = true;
+
+        backGroundsButton = Object.create(buttonObject);
+        backGroundsButton.x = 942;
+        backGroundsButton.y = 350;
+        backGroundsButton.sourceY = 94;
+        backGroundsButton.sourceX = 700;
+        backGroundsButton.action = function () {
+            menuState = BACKGROUNDS; blackScreen.alpha = 1; gameTime = 0; muteButton.state = BACKGROUNDS; muteMusicButton.state = BACKGROUNDS; followButton.state = menuState; likeButton.state = menuState; infoButton.state = menuState; donateButton.state = menuState; backButton.state = BACKGROUNDS; availableScreens = [];
+
+            screensOwned = 0;
+
+            screenButtons = [];
+
+            getAvaiableScreens();
+
+            for (var i = 0; i < availableScreens.length; i++) {
+                var newScreenButton = Object.create(screenButtonObject);
+                newScreenButton.y = 350;
+                newScreenButton.x = screenX + ((i - Math.ceil(availableScreens.length / 2)) * 250);
+
+                newScreenButton.sourceX = 300 + (availableScreens[i] * newScreenButton.sourceWidth);
+                newScreenButton.changed = false;
+                newScreenButton.wasDown = false;
+                screenButtons.push(newScreenButton);
+            }
+        };
+		backGroundsButton.showWhenTransitioning = true;
+
+        rankButton = Object.create(buttonObject);
+        rankButton.x = 462;
+        rankButton.y = 350;
+        rankButton.sourceY = 294;
+        rankButton.sourceX = 700;
+        rankButton.state = MENU;
+        rankButton.action = function () {
+            menuState = RANKS;
+            blackScreen.alpha = 1;
+            gameTime = 0;
+            muteButton.state = RANKS;
+			muteMusicButton.state = RANKS;
+            backButton.state = RANKS;
+            followButton.state = menuState;
+            likeButton.state = menuState;
+            donateButton.state = menuState;
+			infoButton.state = menuState;
+            updateGlobalHighscores();
+			page = 1;
+        };
+		rankButton.showWhenTransitioning = true;
+		
+		var canSelectCars = false;
+
+        carsButton = Object.create(buttonObject);
+        carsButton.x = 702;
+        carsButton.y = 350;
+        carsButton.sourceY = 294;
+        carsButton.sourceX = 300;
+        carsButton.state = MENU;
+        carsButton.action = function () {
+			for (var i = 0; i < carButtons.length; i++)
+			{
+				if (carButtons[i].sourceX === showCar.sourceX)
+				{
+					hoverCar = i;
+				}
+			}
+		
+			canSelectCars = false;
+
+            availableCars = [];
+            carsOwned = 0;
+            highestCarNum = 0;
+
+            getAvailableCars();
+
+            carButtons = [];
+
+            for (var i = 0; i < availableCars.length; i++) {
+				var newCarButton = Object.create(carButtonObject);
+				if (i > (availableCars.length - 1) / 2) {
+					newCarButton.y = carY;
+					newCarButton.x = carX + ((i - Math.ceil(availableCars.length / 2)) * carSpacing);
+				}
+				else {
+					newCarButton.y = carY;
+					newCarButton.x = carX + (i * carSpacing);
+				}
+				newCarButton.sourceX = availableCars[i] * 50;
+				newCarButton.changed = false;
+				newCarButton.wasDown = false;
+				newCarButton.alpha = .5;
+				carButtons.push(newCarButton);
+			}
+
+
+            menuState = CARS; blackScreen.alpha = 1;
+            gameTime = 0;
+            muteButton.state = CARS;
+			muteMusicButton.state = CARS;
+            backButton.state = CARS;
+
+            followButton.state = menuState;
+            likeButton.state = menuState;
+            donateButton.state = menuState;
+			infoButton.state = menuState;
+        };
+		carsButton.showWhenTransitioning = true;
+
+
+        var carSelectObject = Object.create(spriteObject);
+        carSelectObject.sourceY = 435;
+        carSelectObject.sourceHeight = 94;
+        carSelectObject.sourceWidth = 54;
+		carSelectObject.height = 188;
+        carSelectObject.width = 108;
+        carSelectObject.alpha = 0;
+		
+		var carRightObject = Object.create(buttonObject);
+		carRightObject.sourceY = 436;
+		carRightObject.sourceX = 54;
+		carRightObject.sourceHeight = 74;
+        carRightObject.sourceWidth = 75;
+		carRightObject.height = 75;
+        carRightObject.width = 75;
+        carRightObject.x = 1107;
+		carRightObject.y = 350;
+		carRightObject.flipped = false;
+		carRightObject.state = CARS;
+		carRightObject.action = function() { 
+			carPage++;
+			carPage = Math.min(carPage, 2);
+		};
+		
+		var carLeftObject = Object.create(buttonObject);
+		carLeftObject.sourceY = 436;
+		carLeftObject.sourceX = 54;
+		carLeftObject.sourceHeight = 74;
+        carLeftObject.sourceWidth = 75;
+		carLeftObject.height = 75;
+        carLeftObject.width = 75;
+        carLeftObject.x = 192;
+		carLeftObject.y = 350;
+		carLeftObject.state = CARS;
+		carLeftObject.flipped = true;
+		carLeftObject.action = function() {
+			carPage--;
+			carPage = Math.max(carPage, 1);
+		};
+		
+		
+		
+
+        var bannerObject = Object.create(spriteObject);
+        bannerObject.sourceY = 529;
+        bannerObject.sourceHeight = 20;
+        bannerObject.sourceWidth = 94;
+        bannerObject.height = 20;
+        bannerObject.width = 94;
+        bannerObject.placeNumber = 0;
+        bannerObject.y = 0 - bannerObject.height;
+        bannerObject.score = 0;
+        bannerObject.name = "New Car";
+        bannerObject.sources = [0];
+        bannerObject.visible = false;
+
+        bannerScores = [highscoresList[0] + 1, 25, 50, 75, 100, 150, 200, 250, 300];
+		bannerTypes = ["car", "car", "car", "car", "car", "screen", "car", "screen", "car"];
+        bannerSources = [[], [1, 2, 3, 4, 5, 14], [6], [7], [8], [1], [9], [2], [10]];
+		bannerSourceYs = [0,1,2,3,4,7,5,8,6];
+        bannerNames = ["High Score", "Colored Cars", "Bronze Car", "Random Car", "Silver Car", "Outer Space", "Gold Car", "Lava", "PLatinum Car"];
+
+        banners = [];
+
+        for (var i = 0; i < bannerScores.length; i++) {
+            if (bannerScores[i] > highscoresList[0]) {
+                var newBanner = Object.create(bannerObject);
+                newBanner.sourceY += bannerSourceYs[i] * newBanner.sourceHeight;
+                newBanner.score = bannerScores[i];
+                newBanner.name = bannerNames[i];
+                newBanner.sources = bannerSources[i];
+				newBanner.type = bannerTypes[i];
+                banners.push(newBanner);
+            }
+        }
+
+        var displayCarObject = Object.create(carObject);
+        displayCarObject.height = 188;
+        displayCarObject.width = 100;
+        displayCarObject.rotation = 0;
+		
+		var displayScreenObject = Object.create(screenButtonObject);
+		
+
+        var nameBox = Object.create(spriteObject);
+        nameBox.x = 341.5;
+        nameBox.y = 15;
+        nameBox.width = 683;
+        nameBox.height = 384;
+        nameBox.sourceWidth = 682;
+        nameBox.sourceHeight = 384;
+        nameBox.sourceY = 94;
+        nameBox.sourceX = 1101;
+
+        function resetGame() {
+		
+			highscoresList = JSON.parse(localStorage.getItem("high score list"));
+			highscoresDates = JSON.parse(localStorage.getItem("high score dates"));
+
+            //document.getElementById('nocursor').style.cursor = 'none';
+
+            bannerScores = [highscoresList[0] + 1, 25, 50, 75, 100, 150, 200, 250, 300];
+			bannerTypes = ["car", "car", "car", "car", "car", "screen", "car", "screen", "car"];
+			bannerSources = [[], [1, 2, 3, 4, 5, 14], [6], [7], [8], [1], [9], [2], [10]];
+			bannerSourceYs = [0,1,2,3,4,7,5,8,6];
+			bannerNames = ["High Score", "Colored Cars", "Bronze Car", "Random Car", "Silver Car", "Outer Space", "Gold Car", "Lava", "PLatinum Car"];
+
+			banners = [];
+
+			for (var i = 0; i < bannerScores.length; i++) {
+				if (bannerScores[i] > highscoresList[0]) {
+					var newBanner = Object.create(bannerObject);
+					newBanner.sourceY += bannerSourceYs[i] * newBanner.sourceHeight;
+					newBanner.score = bannerScores[i];
+					newBanner.name = bannerNames[i];
+					newBanner.sources = bannerSources[i];
+					newBanner.type = bannerTypes[i];
+					banners.push(newBanner);
+				}
+			}
+
+            availableCars = [];
+            carsOwned = 0;
+            highestCarNum = 0;
+
+            getAvailableCars();
+
+            carButtons = [];
+
+			for (var i = 0; i < availableCars.length; i++) {
+				var newCarButton = Object.create(carButtonObject);
+				if (i > (availableCars.length - 1) / 2) {
+					newCarButton.y = carY;
+					newCarButton.x = carX + ((i - Math.ceil(availableCars.length / 2)) * carSpacing);
+				}
+				else {
+					newCarButton.y = carY;
+					newCarButton.x = carX + (i * carSpacing);
+				}
+				newCarButton.sourceX = availableCars[i] * 50;
+				newCarButton.changed = false;
+				newCarButton.wasDown = false;
+				newCarButton.alpha = .5;
+				carButtons.push(newCarButton);
+			}
+
+            gameTime = 0;
+
+            //blackScreen.alpha = 1;
+
+            buttons = [];
+
+            scoreTransparency = 1;
+
+            newHighScore = false;
+
+            waitCounter = 0;
+
+            score = 0;
+
+            onRoad = true;
+
+            sprites = [];
+
+
+            if (!transitioning || true) {
+                grounds = [];
+
+                var backGround = Object.create(spriteObject);
+                backGround.sourceWidth = 1366;
+                backGround.sourceHeight = 768;
+                backGround.width = 1366;
+                backGround.height = 768;
+                backGround.y = 0;
+                backGround.sourceY = currentScreen * (backGround.sourceHeight + 1);
+                backGround.sourceX = 0;
+                backGround.moveRatio = screenRatios[currentScreen];
+
+                grounds.push(backGround);
+
+                var backGround = Object.create(backGround);
+                backGround.sourceWidth = 1366;
+                backGround.sourceHeight = 768;
+                backGround.width = 1366;
+                backGround.height = 768;
+                backGround.y = -backGround.height + 1;
+                backGround.flippedh = screenFlippeds[currentScreen];
+
+                grounds.push(backGround);
+
+                var backGround = Object.create(backGround);
+                backGround.sourceWidth = 1366;
+                backGround.sourceHeight = 768;
+                backGround.width = 1366;
+                backGround.height = 768;
+                backGround.y = 0;
+                backGround.x = -backGround.width + 1;
+                //backGround.sourceY = 0;
+                backGround.flipped = screenFlippeds[currentScreen];
+                backGround.flippedh = false;
+                grounds.push(backGround);
+
+                var backGround = Object.create(backGround);
+                backGround.sourceWidth = 1366;
+                backGround.sourceHeight = 768;
+                backGround.width = 1366;
+                backGround.height = 768;
+                backGround.y = -backGround.height + 1;
+                backGround.x = -backGround.width + 1;
+                backGround.flipped = screenFlippeds[currentScreen];
+                backGround.flippedh = screenFlippeds[currentScreen];
+
+                grounds.push(backGround);
+            }
+
+            car = Object.create(spriteObject);
+            car.sourceX = 50 * currentCar;
+            if (currentCar === 7) {
+                var lastSourceX = car.sourceX;
+                while (true) {
+                    car.sourceX = carSources[Math.floor(Math.random() * carsOwned)] * 50;
+                    if (!(car.sourceX === 7 * 50 || lastSourceX === car.sourceX)) {
+                        break;
+                    }
+                }
+            }
+
+            car.sourceY = 0;
+            car.sourceHeight = 94;
+            car.sourceWidth = 50;
+            car.height = 94;
+            car.width = 50;
+            car.x = WINDOWWIDTH / 2 - car.halfWidth();
+            car.y = 430;
+            car.speed = 0;
+            car.ySpeed = 0;
+            car.xSpeed = 0;
+            car.maxSpeed = 3.5;
+            car.state = "starting";
+            car.accel = 0;
+
+            if (!transitioning) {
+
+                roadsAdded = 0;
+
+                roads = [];
+
+                roadSpotX = WINDOWWIDTH / 2 - roadObject.halfWidth();
+                roadSpotY = WINDOWHEIGHT - roadObject.height;
+                roadDirection = 0;
+				
+				console.log(tutorial);
+                if (tutorial === true) {
+                    for (var i = 0; i < 20; i++) {
+                        var newRoad = Object.create(roadObject);
+                        newRoad.x = roadSpotX;
+                        newRoad.y = roadSpotY;
+                        roadSpotY -= newRoad.height - 1;
+                        if (i < 16) {
+                            newRoad.passed = true;
+                        }
+                        else {
+                            roadsAdded++;
+                        }
+                        roads.push(newRoad);
+                    }
+                }
+                else {
+                    for (var i = 0; i < 6; i++) {
+                        var newRoad = Object.create(roadObject);
+                        newRoad.x = roadSpotX;
+                        newRoad.y = roadSpotY;
+                        roadSpotY -= newRoad.height - 1;
+                        if (i < 2) {
+                            newRoad.passed = true;
+                        }
+                        else {
+                            roadsAdded++;
+                        }
+                        roads.push(newRoad);
+                    }
+                }
+            }
+
+            moveLeft = false;
+            moveRight = false;
+
+            leftSide = false;
+            rightSide = false;
+
+            cameramx = 0;
+
+            if (gameState === PLAYING) {
+                carStarting.currentTime = 0;
+                carStarting.play();
+            }
+
+            buttons.push(resumeButton);
+
+            menuButton.x = (1366 / 2) - (menuButton.width / 2);
+            menuButton.y = 400;
+            menuButton.state = PAUSE;
+
+            buttons.push(menuButton);
+
+            muteButton.state = PAUSE;
+			muteMusicButton.state = PAUSE;
+            buttons.push(muteButton);
+			buttons.push(muteMusicButton);
+
+            buttons.push(pauseButton);
+
+            menuState = PLAYING;
+        }
+
+        function resetMenu() {
+			if (donated === true)
+			{
+				//CocoonJS.Ad.hideBanner();
+				donateButton.active = false;
+			}
+
+            resetGame();
+
+            transitioning = false;
+
+            moveTime = 0;
+
+            gameTime = 0;
+
+            menuTime = 0;
+
+            menuState = MENU;
+
+            targetRotation = 90;
+
+            buttons = [];
+
+
+            buttons.push(playButton);
+			buttons.push(infoButton);
+
+
+            buttons.push(backGroundsButton);
+            buttons.push(rankButton);
+            buttons.push(carsButton);
+
+            buttons.push(nameButton);
+
+            buttons.push(backButton);
+
+            buttons.push(globalHighScoresButton);
+			buttons.push(pageUpButton);
+			buttons.push(pageDownButton);
+			
+			buttons.push(carRightObject);			
+			buttons.push(carLeftObject);
+
+            muteButton.state = MENU;
+			muteMusicButton.state = MENU;
+            buttons.push(muteButton);
+			buttons.push(muteMusicButton);
+            buttons.push(donateButton);
+            buttons.push(followButton);
+            buttons.push(likeButton);
+
+            showCar = Object.create(car);
+            showCar.y = 575;
+            showCar.rotation = 90;
+            showCar.speed = 5;
+
+            down = false;
+
+            carSound1.play();
+
+            blackScreen.alpha = 1;
+        }
+
+        function resetPause() {
+
+            blackScreen.alpha = 0.5;
+
+            carSound1.pause();
+            carSound2.pause();
+            carStarting.pause();
+        }
+
+        window.addEventListener("keydown", function (event) {
+            switch (event.keyCode) {
+                case LEFT:
+                    leftSide = true;
+                    break;
+                case 65:
+                    leftSide = true;
+                    break;
+                case RIGHT:
+                    rightSide = true;
+                    break;
+                case 68:
+                    rightSide = true;
+                    break;
+                case 13:
+                    enter = true;
+                    break;
+                case 32:
+                    enter = true;
+                    break;
+            }
+        }, false);
+
+        window.addEventListener("keyup", function (event) {
+            switch (event.keyCode) {
+                case LEFT:
+                    leftSide = false;
+                    break;
+                case RIGHT:
+                    rightSide = false;
+                    break;
+                case 65:
+                    leftSide = false;
+                    break;
+                case 68:
+                    rightSide = false;
+                    break;
+                case 13:
+                    enter = false;
+                    break;
+                case 32:
+                    enter = false;
+                    break;
+                case 27:
+                    if (gameState === PLAYING) {
+                        pauseButton.action();
+                    }
+                    else if (gameState === PAUSE) {
+                        resumeButton.action();
+                    }
+                    break;
+            }
+        }, false);
+
+        canvas.addEventListener("MSPointerCancel", function (e) { e.preventDefault(); }, false);
+        canvas.addEventListener("MSGestureInit", function (e) { if (e.preventManipulation) e.preventManipulation(); }, false);
+        canvas.addEventListener("MSHoldVisual", function (e) { e.preventDefault(); }, false);
+
+        canvas.addEventListener("touchmove", function (event) {
+
+            cursorTime = 60;
+
+            pointerX = event.targetTouches[0].offsetX / horizontalOffset;
+            pointerY = event.targetTouches[0].offsetY / verticalScale;
+
+            event.preventDefault();
+
+        }, false);
+        
+        canvas.addEventListener("mousemove", function (event) {
+
+            cursorTime = 60;
+
+            pointerX = event.offsetX / horizontalScale;;
+            pointerY = event.offsetY / verticalScale;;
+
+            event.preventDefault();
+
+        }, false);
+
+        canvas.addEventListener("touchstart", function (event) {
+        	
+        	pointerX = event.targetTouches[0].offsetX / horizontalScale;
+            pointerY = event.targetTouches[0].offsetY / verticalScale;
+            
+            down = true;
+
+            var boundary = canvas.width * 2 / (5 * horizontalScale);
+
+            if (pointerX < boundary && pointerY / verticalScale > 250) {
+                leftSide = true;
+                rightSide = false;
+            }
+            if (pointerX > (canvas.width / horizontalScale) - boundary && pointerY / verticalScale > 250) {
+                rightSide = true;
+                leftSide = false;
+            }
+
+            if (gameState !== NAME) {
+                event.preventDefault();
+            }
+        }, false);
+        
+        canvas.addEventListener("mousedown", function (event) {
+        	
+        	pointerX = event.offsetX / horizontalScale;
+            pointerY = event.offsetY / verticalScale;
+            
+            down = true;
+
+            var boundary = canvas.width * 2 / (5 * horizontalScale);
+
+            if (pointerX < boundary && pointerY / verticalScale > 250) {
+                leftSide = true;
+                rightSide = false;
+            }
+            if (pointerX > (canvas.width / horizontalScale) - boundary && pointerY / verticalScale > 250) {
+                rightSide = true;
+                leftSide = false;
+            }
+
+            if (gameState !== NAME) {
+                event.preventDefault();
+            }
+        }, false);
+
+        canvas.addEventListener("touchend", function (event) {
+
+            
+            console.log(pointerX);
+
+            var boundary = canvas.width * 2 / (5 * horizontalScale);
+
+
+            if (pointerX / horizontalScale < boundary && pointerY / verticalScale > 250) {
+                leftSide = false;
+            }
+            if (pointerX / horizontalScale > (canvas.width / horizontalScale) - boundary && pointerY / verticalScale > 250) {
+                rightSide = false;
+            }
+
+            if (!transitioning && !carScreen) {
+                checkButtons();
+            }
+
+            down = false;
+
+            leftSide = false;
+            rightSide = false;
+
+            if (gameState !== NAME) {
+                event.preventDefault();
+            }
+        }, false);
+        
+        canvas.addEventListener("mouseup", function (event) {
+
+            console.log(pointerX);
+
+            var boundary = canvas.width * 2 / (5 * horizontalScale);
+
+
+            if (pointerX / horizontalScale < boundary && pointerY / verticalScale > 250) {
+                leftSide = false;
+            }
+            if (pointerX / horizontalScale > (canvas.width / horizontalScale) - boundary && pointerY / verticalScale > 250) {
+                rightSide = false;
+            }
+
+            if (!transitioning && !carScreen) {
+                checkButtons();
+            }
+
+            down = false;
+
+            leftSide = false;
+            rightSide = false;
+
+            if (gameState !== NAME) {
+                event.preventDefault();
+            }
+        }, false);
+		
+		var loaded = false;
+
+        function loadHandler() {
+            assestsLoaded++;
+            if (assestsLoaded >= assestsToLoad.length) {
+				loaded = true;
+				
+				ground.removeEventListener("load", loadHandler, false);
+				image.removeEventListener("load", loadHandler, false);
+				menuImage.removeEventListener("load", loadHandler, false);
+                
+            }			
+        }
+		
+		function renderGlobalHighscores()
+		{
+			if (typeof thisPlayer !== "undefined") {
+						var ITEMSPERPAGE = 5;
+                        for (var i = ((page - 1) * ITEMSPERPAGE); i < Math.min(globalHighScores.length,page * ITEMSPERPAGE); i++) {
+                            /*if (i > 9) {
+                                break;
+                            }*/
+                            if (globalHighScores[i][1] !== 0) {
+                                
+                                drawingSurfacefillText((i + 1).toString() + ". ", 220 * horizontalScale, (300 + ((i - ((page - 1) * ITEMSPERPAGE)) * 48)) * verticalScale);
+                                drawingSurfacefillText(globalHighScores[i][0], 300 * horizontalScale, (300 + ((i - ((page - 1) * ITEMSPERPAGE)) * 48)) * verticalScale);
+                                drawingSurfacefillText(globalHighScores[i][1], 800 * horizontalScale, (300 + ((i - ((page - 1) * ITEMSPERPAGE)) * 48)) * verticalScale);
+                                drawingSurfacefillText(globalHighScores[i][2], 940 * horizontalScale, (300 + ((i - ((page - 1) * ITEMSPERPAGE)) * 48)) * verticalScale);
+								
+								/*
+                                var numString = (i + 1).toString() + ". ";
+
+                                if (i !== 0) {
+                                    if (globalHighScores[i].get("score") === globalHighScores[i - 1].get("score")) {
+                                        numString = "";
+                                    }
+                                }
+
+                                globalScoresText = globalScoresText + createAlignedDiv(numString, Math.round(0 * horizontalScale)) + createAlignedDiv(globalHighScores[i].get("score").toString(), Math.round(80 * horizontalScale)) + createAlignedDiv(globalHighScores[i].get("name").toString(), Math.round(160 * horizontalScale)) + createAlignedDiv(globalHighScores[i].get("date").toString(), Math.round(550 * horizontalScale));
+								*/
+                                //scoresTextY += 30;
+                            }
+                        }
+                        //scoresText.innerHTML = globalScoresText;
+                    }
+		}
+		
+
+        function writeReview() {
+            review = "true";
+			localStorage.setItem("review", review);
+            console.log("review");
+        }
+        function noReview() {
+            console.log("no review");
+        }
+        function neverReview() {
+            review = "true";
+			localStorage.setItem("review", review);
+        }
+
+        var hackedAlpha = 0;
+        var hackedAlphaUp = true;
+
+        var lastScreenHeight = canvas.height;
+        var lastScreenWidth = canvas.width;
+
+        var nameWarningText = "";
+		
+		function cocoonjsName() {
+			CocoonJS.App.showTextDialog( "Enter your username.", "", nickName, CocoonJS.App.KeyboardType.TEXT, "Cancel", "Ok" );
+			
+		}
+		
+		CocoonJS.App.onTextDialogFinished.addEventListener(function(result) {
+			
+			console.log(nickName);
+			
+			if (result === "") {
+                nameWarningText = "Username cannot be blank.";
+				CocoonJS.App.showTextDialog( "Enter your username.", nameWarningText, "", CocoonJS.App.KeyboardType.TEXT, "Cancel", "Ok" );
+            }
+            else if (result.length > 18) {
+                nameWarningText = "Username cannot be more than 18 characters.";
+				CocoonJS.App.showTextDialog( "Enter your username.", nameWarningText, "", CocoonJS.App.KeyboardType.TEXT, "Cancel", "Ok" );
+            }
+			else if (result.trim().length < 2)
+			{
+				nameWarningText = "Username cannot be less than 2 characters.";
+				CocoonJS.App.showTextDialog( "Enter your username.", nameWarningText, "", CocoonJS.App.KeyboardType.TEXT, "Cancel", "Ok" );
+			}
+            else if (checkName(result))
+            {
+                nameWarningText = "Username is not appropriate.";
+				CocoonJS.App.showTextDialog( "Enter your username.", nameWarningText, "", CocoonJS.App.KeyboardType.TEXT, "Cancel", "Ok" );
+            }
+            else if (checkIfNameIsBlank(result)) {
+                nameWarningText = "Username cannot be blank.";
+				CocoonJS.App.showTextDialog( "Enter your username.", nameWarningText, "", CocoonJS.App.KeyboardType.TEXT, "Cancel", "Ok" );
+            }
+            else if (typeof thisPlayer !== "undefined") {
+                var nameDuplicate = false;
+                for (var i = 0; i < globalHighScores.length; i++) {
+                    if (result === globalHighScores[i][0] && globalHighScores[i][3] !== playerId && globalHighScores[i][0] !== nickName) {
+                        nameDuplicate = true;
+                        break;
+                    }
+                }
+                if (nameDuplicate) {
+				    nameWarningText = "Username already taken.";
+					CocoonJS.App.showTextDialog( "Enter your username.", nameWarningText, "", CocoonJS.App.KeyboardType.TEXT, "Cancel", "Ok" );
+                }
+                else {
+                    nickName = result;
+					localStorage.setItem("nick name", nickName);
+					updateGlobalHighscores();
+                    gameState = MENU;
+                    menuState = MENU;
+					
+					setVerticalAndHorizontalScale(MENUZOOMAMOUNT);					
+					
+					isNaming = false;
+                }
+			}
+			else {
+				isNaming = false;
+			}
+
+		});
+		
+		CocoonJS.App.onTextDialogCancelled.addEventListener(function(unusedResult) {
+			
+			var result = nickName;
+			
+			if (result === "") {
+                nameWarningText = "Username cannot be blank";
+				CocoonJS.App.showTextDialog( "Enter your username.", nameWarningText, "", CocoonJS.App.KeyboardType.TEXT, "Cancel", "Ok" );
+            }
+            else if (result.length > 18) {
+                nameWarningText = "Username cannot be more than 18 characters";
+				CocoonJS.App.showTextDialog( "Enter your username.", nameWarningText, "", CocoonJS.App.KeyboardType.TEXT, "Cancel", "Ok" );
+            }
+			else if (result.trim().length < 2)
+			{
+				nameWarningText = "Username cannot be less than 2 characters";
+				CocoonJS.App.showTextDialog( "Enter your username.", nameWarningText, "", CocoonJS.App.KeyboardType.TEXT, "Cancel", "Ok" );
+			}
+            else if (checkName(result))
+            {
+                nameWarningText = "Username is not appropriate";
+				CocoonJS.App.showTextDialog( "Enter your username.", nameWarningText, "", CocoonJS.App.KeyboardType.TEXT, "Cancel", "Ok" );
+            }
+            else if (checkIfNameIsBlank(result)) {
+                nameWarningText = "Username cannot be blank";
+				CocoonJS.App.showTextDialog( "Enter your username.", nameWarningText, "", CocoonJS.App.KeyboardType.TEXT, "Cancel", "Ok" );
+            }
+            else if (typeof thisPlayer !== "undefined") {
+                var nameDuplicate = false;
+                for (var i = 0; i < globalHighScores.length; i++) {
+                    if (result === globalHighScores[i][0] && globalHighScores[i][3] !== playerId && globalHighScores[i][0] !== nickName) {
+                        nameDuplicate = true;
+                        break;
+                    }
+                }
+                if (nameDuplicate) {
+				    nameWarningText = "Username already taken.";
+					CocoonJS.App.showTextDialog( "Enter your username.", nameWarningText, "", CocoonJS.App.KeyboardType.TEXT, "Cancel", "Ok" );
+                }
+                else {
+                    gameState = MENU;
+                    menuState = MENU;
+					isNaming = false;
+					
+					setVerticalAndHorizontalScale(MENUZOOMAMOUNT);
+                }
+			}
+			else {
+				isNaming = false;
+			}
+
+		});
+		
+		var isNaming = false;
+
+        function update() {
+
+            if (updateTime === 60) {
+
+                if (typeof thisPlayer !== "undefined") {
+                    if (typeof thisPlayer.get("nameChanged") !== "undefined") {
+                        nickName =  thisPlayer.get("name");
+						localStorage.setItem("nick name", nickName);
+                    }
+                }
+				if (gameState !== LAUNCH)
+				{
+					
+				}
+            }
+
+            if (gameState !== MENU || menuState !== RANKS || rankState !== GLOBAL) {
+                //scoresText.style.display = "none";
+            }
+            else {
+                //scoresText.style.display = "inline";
+			}
+
+            if ((nickName === "") && updateTime > 60 && typeof thisPlayer !== "undefined" && gameState !== NAME && isNaming === false && gameState !== LAUNCH) {
+				nameWarningText = "";
+                checkName(nickName);
+                checkIfNameIsBlank(nickName);
+                //gameState = NAME;
+                //menuState = NAME;
+				cocoonjsName();
+				isNaming = true;
+				//CocoonJS.App.showTextDialog("Enter your user name.", "", "", CocoonJS.App.KeybaordType.TEXT, "Cancel", "Submit" );
+            }
+
+            cursorTime--;
+            
+            if (cursorTime < 0 && gameState === PLAYING) {
+                //document.getElementById('nocursor').style.cursor = 'none';
+            }
+            else {
+                if (link) {
+                    //document.getElementById('nocursor').style.cursor = 'pointer';
+                }
+                else {
+                    //document.getElementById('nocursor').style.cursor = 'default';
+                }
+            }
+
+            requestAnimationFrame(update, canvas);
+
+            updateTime++;
+            adTime++;
+
+            if (canvas.height !== window.innerHeight || canvas.width !== window.innerWidth) {
+
+                if (lastScreenHeight !== window.innerHeight && lastScreenWidth === window.innerWidth && false) {
+                    canvas.height = window.innerHeight * 1.72;
+
+                    setVerticalAndHorizontalScale(ZOOMAMOUNT);
+
+
+                }
+                else {
+                    canvas.height = window.innerHeight;
+                    canvas.width = window.innerWidth;
+
+                    setVerticalAndHorizontalScale(ZOOMAMOUNT);
+
+                }
+
+            }
+
+
+            hacked = (highscoresList[0] >= 1000);
+
+            if (hacked) {
+                if (hackedAlphaUp) {
+                    hackedAlpha += .04;
+                    if (hackedAlpha >= 1) {
+                        hackedAlpha = 1;
+                        hackedAlphaUp = false;
+                    }
+                }
+                else {
+                    hackedAlpha -= .04;
+                    if (hackedAlpha <= 0) {
+                        hackedAlpha = 0;
+                        hackedAlphaUp = true;
+                    }
+                }
+
+                drawingSurface.clearRect(0, 0, canvas.width, canvas.height);
+
+                drawingSurface.save();
+
+                drawingSurface.globalAlpha = hackedAlpha;
+
+                var fontSize = getFontSize(70);
+
+                drawingSurface.font = "normal normal " + fontSize.toString() + "pt agency fb";
+                drawingSurface.fillStyle = "rgba(255, 255, 255, 1)";
+                drawingSurface.textBaseline = "top";
+
+                drawingSurfacefillText("Hack Detected", 460 * horizontalScale, 300 * verticalScale);
+
+                drawingSurface.restore();
+
+            }
+            else {
+                switch (gameState) {
+                    case MENU:
+                        menu();
+                        break;
+                    case PLAYING:
+                        playGame();
+                        break;
+                    case WAITING:
+                        if (newCarUnlocked && carScreen) {
+                            newCar();
+                        }
+                        else {
+                            wait();
+                        }
+                        break;
+                    case PAUSE:
+                        pause();
+                        break;
+                    case NAME:
+                        name();
+                        break;
+					case LAUNCH:
+						renderLaunch();
+						break;
+                }
+            }
+
+            if (gameState === NAME) {
+                //form.style.visibility = "visible";
+            }
+            else {
+                //form.style.visibility = "hidden";
+            }
+			
+        }
+
+        function name() {
+            if (carSound1.currentTime > 4.4) {
+                carSound2.play();
+            }
+            if (carSound2.currentTime > 4.4) {
+                carSound1.play();
+            }
+
+            if (nickNameBox.value === "") {
+                nameWarningText = "Username cannot be blank.";
+            }
+            else if (nickNameBox.value.length > 18) {
+                nameWarningText = "Username cannot be more than 18 characters.";
+            }
+            else if (checkName(nickNameBox.value)) {
+                nameWarningText = "Username is not appropriate.";
+            }
+            else if (checkIfNameIsBlank(nickNameBox.value)) {
+                nameWarningText = "Username cannot be blank.";
+            }
+            else if (typeof thisPlayer !== "undefined") {
+                var nameDuplicate = false;
+                for (var i = 0; i < globalHighScores.length; i++) {
+                    if (nickNameBox.value === globalHighScores[i][0] && playerId !== globalHighScores[i][3]) {
+                        nameDuplicate = true;
+                        break;
+                    }
+                }
+                if (nameDuplicate) {
+                    nameWarningText = "Username already taken.";
+                }
+                else {
+                    nameWarningText = "";
+                }
+            }
+
+            controlCar(showCar);
+
+            showCar.y -= showCar.ySpeed;
+            showCar.x += showCar.xSpeed;
+
+            renderMenu();
+
+            for (var i = 0; i < buttons.length; i++) {
+                if (buttons[i].state === MENU) {
+                    drawSprite(buttons[i], image, MENU);
+                }
+            }
+
+            blackScreen.alpha = .5;
+            drawSprite(blackScreen, image, MENU);
+
+            drawSprite(nameBox, image, MENU);
+            var fontSize = getFontSize(12);
+
+            drawingSurface.font = "normal normal " + fontSize.toString() + "pt " + font;
+            drawingSurface.fillStyle = "rgba(255, 0, 0, 1)";
+            drawingSurface.textBaseline = "bottom";
+            drawingSurfacefillText(nameWarningText, 440 * horizontalScale, 300 * verticalScale);
+        }
+
+        function pause() {
+            checkButtons();
+
+            render();
+            renderPause();
+        }
+		
+		function renderLaunch() {
+			if (loaded && updateTime > 120)
+			{
+				launchTime++;
+				if (launchTime >= 0)
+				{
+					launchWidth = 512 + (launchTime * 2);
+					launchAlpha = Math.max(1 - launchTime / 120, 0);
+				}
+				
+				if (launchTime >= 120)
+				{
+					updateTime = 0;
+					
+					setVerticalAndHorizontalScale(ZOOMAMOUNT);
+					
+					gameState = MENU;
+					
+					resetGame();
+					resetMenu();
+					
+					//setInterval(update, 16);
+					
+					//banner();
+					
+					CocoonJSMusic.play();
+				}
+			}
+
+			drawingSurface.clearRect(0,0, canvas.width, canvas.height);
+			if (launchTime >= -90)
+			{
+				drawingSurface.save();
+                drawingSurface.scale(scaleX, scaleY);
+
+				drawingSurface.globalAlpha = launchAlpha;
+				drawingSurface.drawImage
+						(
+							launchImage,
+							0, 0, 512, 512,
+							Math.round(((1366/2) - (launchWidth/2) - (horizontalOffset/2)) * horizontalScale), Math.round(((768/2) - (launchWidth/2) - (verticalOffset/2)) * verticalScale), Math.round(launchWidth * horizontalScale), Math.round(launchWidth * verticalScale)
+						);
+
+				drawingSurface.restore();
+			}
+			else {
+				drawingSurface.save();
+                drawingSurface.scale(scaleX, scaleY);
+				drawingSurface.drawImage
+						(
+							companyImage,
+							0, 0, 800, 500,
+							Math.round(((1366/2) - (800/2) - (horizontalOffset/2)) * horizontalScale), Math.round(((768/2) - (500/2) - (verticalOffset/2)) * verticalScale), Math.round(800 * horizontalScale), Math.round(500 * verticalScale)
+						);
+
+				drawingSurface.restore();
+			}
+            //drawSprite(launchSprite, launchImage);
+
+        }
+
+        function renderPause() {
+
+            drawSprite(blackScreen, image);
+
+            for (var i = 0; i < buttons.length; i++) {
+                if (buttons[i].state === PAUSE) {
+                    drawSprite(buttons[i], image);
+
+                    if (!(typeof buttons[i].text === "undefined")) {
+                        var fontSize = getFontSize(50);
+
+                        drawingSurface.font = "normal normal " + fontSize.toString() + "pt " + font;
+                        drawingSurface.fillStyle = "rgba(255, 255, 255, 1)";
+                        drawingSurface.textBaseline = "top";
+
+                        drawingSurfacefillText(buttons[i].text, (buttons[i].textX()) * horizontalScale, (buttons[i].textY()) * verticalScale);
+                    }
+                }
+            }
+        }
+
+        function menu() {
+		
+			if (!(firstTime === true) && review === "false" && !hasAskedForReview && (readyForReview || false) && !transitioning) {
+                hasAskedForReview = true;
+				reviewTime = 600;
+				notification.alpha = .75;
+				notification.text = "If you enjoy using Curvy Car please take a moment to rate it. Thanks for your support!"
+				down = false;
+            }
+			
+            menuTime++;
+
+            nameButton.state = menuState;
+            muteButton.state = menuState;
+			muteMusicButton.state = menuState;
+            likeButton.state = menuState;
+            followButton.state = menuState;
+            donateButton.state = menuState
+			infoButton.state = menuState;
+
+            controlCar(showCar);
+
+            showCar.y -= showCar.ySpeed;
+            showCar.x += showCar.xSpeed;
+
+            if (!transitioning) {
+                checkButtons();
+            }
+            if (menuState === CARS) {
+				if (canSelectCars)
+				{
+					checkCarButtons();
+				}
+				if (down === true)
+				{
+					canSelectCars = true;
+				}
+				for (var i = 0; i < carButtons.length; i++)
+				{
+					carButtons[i].alpha = .5;
+				}
+				carButtons[hoverCar].alpha = 1;
+            }
+            if (menuState === BACKGROUNDS) {
+                checkScreenButtons();
+            }
+            if (((currentCar === 7 && menuTime % 60 === 0 && carSelectObject.alpha === 0)) || showCar.sourceX === 7 * showCar.sourceWidth) {
+                var lastSourceX = car.sourceX;
+                while (true) {
+                    car.sourceX = carSources[Math.floor(Math.random() * carsOwned)] * 50;
+                    if (!(car.sourceX === 7 * 50 || lastSourceX === car.sourceX)) {
+                        break;
+                    }
+                }
+            }
+
+            if (carSound1.currentTime > 4.4) {
+                carSound2.play();
+            }
+            if (carSound2.currentTime > 4.4) {
+                carSound1.play();
+            }
+
+            if (transitioning) {
+                var color = car.sourceX;
+                moveTime += 20;
+				setVerticalAndHorizontalScale(((moveTime / 1366) * (PLAYZOOMAMOUNT - MENUZOOMAMOUNT)) + MENUZOOMAMOUNT);
+                render();
+                if (moveTime >= 1366) {
+                    moveTime = 1366;
+					setVerticalAndHorizontalScale(PLAYZOOMAMOUNT);
+                    gameState = PLAYING;
+                    resetGame();
+                    transitioning = false;
+                    car.sourceX = color;
+                }
+            }
+            renderMenu();
+        }
+		
+
+        function checkScreenButtons() {
+			var clicked = false;
+            for (var i = 0; i < screenButtons.length; i++) {
+                if (!screenButtons[i].changed && hitTestPoint(pointerX + (horizontalOffset / 2), pointerY + (verticalOffset / 2), screenButtons[i])) {
+                    screenSelectObject.x = screenButtons[i].x;
+                    screenSelectObject.y = screenButtons[i].y;
+                    screenButtons[i].changed = true;
+                    link = true;
+                    screenSelectObject.alpha = .5;
+                    hoverScreen = i;
+                    if (availableScreens[i] !== LOCKSCREENNUM) {
+                        for (var j = 0; j < grounds.length; j++) {
+                            grounds[j].sourceY = screenSources[i] * (grounds[j].sourceHeight + 1);
+                            grounds[j].moveRatio = screenRatios[i];
+                        }
+                    }
+					clicked = true;
+                }				
+                else if (screenButtons[i].changed && !hitTestPoint(pointerX + (horizontalOffset / 2), pointerY + (verticalOffset / 2), screenButtons[i])) {
+                    if (!clicked)
+					{
+						screenSelectObject.alpha = 0;
+					}
+                    screenButtons[i].changed = false;
+                    link = false;
+                    for (var j = 0; j < grounds.length; j++) {
+                        grounds[j].sourceY = currentScreen * (grounds[j].sourceHeight + 1);
+                        grounds[j].moveRatio = screenRatios[currentScreen];
+                    }
+                }
+                if (down && !screenButtons[i].wasDown) {
+                    if (screenButtons[i].changed) {
+                        screenButtons[i].wasDown = true;
+                    }
+                }
+                if (!down && screenButtons[i].wasDown) {
+                    screenButtons[i].wasDown = false;
+                    if (screenButtons[i].changed) {
+                        scoreSound.play();
+                        if (availableScreens[i] !== LOCKSCREENNUM) {
+                            for (var j = 0; j < grounds.length; j++) {
+                                grounds[j].sourceY = screenSources[i] * (grounds[j].sourceHeight + 1);
+                                grounds[j].moveRatio = screenRatios[i];
+                            }
+                            screenSelectObject.alpha = .5;
+                            hoverScreen = i;
+                            currentScreen = screenSources[i];
+							localStorage.setItem("currentScreen", currentScreen);
+                        }
+                    }
+                }
+            }
+        }
+
+        function checkCarButtons() {
+			var clicked = false;
+            for (var i = (carPage - 1) * 8; i < carPage * 8; i++) {
+                if (!carButtons[i].changed && hitTestPoint(pointerX + (horizontalOffset / 2), pointerY + (verticalOffset / 2), carButtons[i])) {
+                    /*carSelectObject.x = carButtons[i].x - 2;
+                    carSelectObject.y = carButtons[i].y;
+					carSelectObject.sourceX = carButtons[i].sourceX;
+					carSelectObject.sourceY = carButtons[i].sourceY;
+					carSelectObject.sourceWidth = carButtons[i].sourceWidth;
+					carSelectObject.sourceHeight = carButtons[i].sourceHeight;
+					carSelectObject.width = carButtons[i].width;
+					carSelectObject.height = carButtons[i].height;*/
+                    carButtons[i].changed = true;
+                    link = true;
+                    //carSelectObject.alpha = .5;
+					carSelectObject.alpha = 0;
+					carButtons[i].alpha = 1;
+                    if (availableCars[i] !== LOCKCARNUM) {
+                        showCar.sourceX = carSources[i] * showCar.sourceWidth;
+                    }
+                    else {
+                        showCar.sourceX = LOCKCARNUM * showCar.sourceWidth;
+                    }
+                    hoverCar = i;
+					clicked = true;
+                }
+                else if (carButtons[i].changed && !hitTestPoint(pointerX + (horizontalOffset / 2), pointerY + (verticalOffset / 2), carButtons[i])) {
+                    if (!clicked)
+					{
+						carSelectObject.alpha = 0;
+					}
+					carButtons[i].alpha = .5;
+                    carButtons[i].changed = false;
+                    showCar.sourceX = showCar.sourceWidth * currentCar;
+                    link = false;
+                }
+                if (down && !carButtons[i].wasDown) {
+                    if (carButtons[i].changed) {
+                        carButtons[i].wasDown = true;
+                    }
+                }
+                if (!down && carButtons[i].wasDown) {
+                    carButtons[i].wasDown = false;
+                    if (carButtons[i].changed) {
+                        scoreSound.play();
+                        if (availableCars[i] !== LOCKCARNUM) {
+                            showCar.sourceX = availableCars[i] * showCar.sourceWidth;
+                            currentCar = carSources[i];
+							localStorage.setItem("currentCar", currentCar);
+                        }
+                    }
+                }
+            }
+        }
+
+        function checkButtons() {
+            if (typeof buttons !== "undefined" && (updateTime > 60 || nickName !== "")) {
+                for (var i = 0; i < buttons.length; i++) {
+                    if (buttons[i].state === menuState && buttons[i].active) {
+                        if (!buttons[i].changed && hitTestPoint(pointerX + (horizontalOffset / 2), pointerY + (verticalOffset / 2), buttons[i])) {
+                            buttons[i].sourceX += buttons[i].sourceWidth;
+                            link = true;
+                            pointerChanged = true;
+                            buttons[i].changed = true;
+                        }
+                        else if (buttons[i].changed && !hitTestPoint(pointerX + (horizontalOffset / 2), pointerY + (verticalOffset / 2), buttons[i])) {
+                            buttons[i].sourceX -= buttons[i].sourceWidth;
+                            link = false;
+                            pointerChanged = true;
+                            buttons[i].changed = false;
+                        }
+                        if (down && !buttons[i].wasDown) {
+                            if (buttons[i].changed) {
+                                buttons[i].wasDown = true;
+                                buttons[i].y += 2;
+                            }
+                        }
+                        if (!down && buttons[i].wasDown) {
+                            buttons[i].wasDown = false;
+                            buttons[i].y -= 2;
+                            if (buttons[i].changed) {
+                                scoreSound.play();
+                                pointerChanged = true;
+                                link = false;
+                                buttons[i].action();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        function hitTestPoint(pointX, pointY, sprite) {
+            var hit
+              = pointX > sprite.x && pointX < sprite.x + sprite.width
+              && pointY > sprite.y && pointY < sprite.y + sprite.height;
+
+            return hit;
+        }
+		
+		function hitTestRoad(pointX, pointY, sprite) {
+			if (sprite.height > sprite.width)
+			{
+				var hit
+				  = pointX > sprite.x && pointX < sprite.x + sprite.width;
+			}
+			else
+			{
+				var hit = 
+					pointY > sprite.y && pointY < sprite.y + sprite.height;
+			}
+
+            return hit;
+		}
+
+        function createAlignedDiv(text, pixels) {
+            return "<div style=\" position: absolute; width:1000; font-size: " + (Math.round(18 * horizontalScale)).toString() + "pt;float:left; top: " + (scoresTextY * verticalScale).toString() +"px; left: " + pixels.toString() + "px; \">" + text + "</div>";
+        }
+		
+		function getFontSize(num)
+		{
+			return Math.ceil(num * horizontalScale * FONTRATIO);
+		}
+
+        function renderMenu() {
+            if (updateTime % FRAMESKIPRATE === 0)
+            {
+                gameTime++;
+
+                //drawingSurface.clearRect(0, 0, canvas.width, canvas.height);
+
+                if (!transitioning) {
+                    for (var i = 0; i < grounds.length; i++) {
+                        drawSprite(grounds[i], ground);
+                    }
+                }
+
+                drawSprite(menuBackGround, menuImage, MENU);
+				
+				
+                for (var i = 0; i < buttons.length; i++) {
+                    if (buttons[i].state === menuState && (!transitioning || buttons[i].showWhenTransitioning) && buttons[i].active) {
+                        drawSprite(buttons[i], image, MENU);
+                        if (!(typeof buttons[i].text === "undefined")) {
+                            console.log(buttons[i].text);
+                            var fontSize = getFontSize(25);
+
+                            drawingSurface.font = "normal normal " + fontSize.toString() + "pt " + font;
+                            drawingSurface.fillStyle = "rgba(255, 255, 255, 1)";
+                            drawingSurface.textBaseline = "top";
+
+                            drawingSurfacefillText(buttons[i].text, (buttons[i].textX()) * horizontalScale, (buttons[i].textY()) * verticalScale);
+
+                        }
+                    }
+                }
+
+                drawSprite(showCar, image, MENU);
+
+                if (menuState === MENU || lastState === MENU) {
+                    var fontSize = getFontSize(96);
+
+                    drawingSurface.font = "normal normal " + fontSize.toString() + "pt " + font;
+                    drawingSurface.fillStyle = "rgba(255, 255, 255, 1)";
+                    drawingSurface.textBaseline = "bottom";
+                    drawingSurfacefillText("Curvy Car", (400 - moveTime) * horizontalScale, 330 * verticalScale);
+                    
+                }
+                if (menuState === RANKS || lastState === RANKS) {
+                    var fontSize = getFontSize(48);
+
+                    drawingSurface.font = "normal normal " + fontSize.toString() + "pt " + font;
+                    drawingSurface.fillStyle = "rgba(255, 255, 255, 1)";
+                    drawingSurface.textBaseline = "bottom";
+					drawingSurface.textAlign = "center";
+                    drawingSurfacefillText("High Scores", (1366/2) * horizontalScale, 260 * verticalScale);
+					drawingSurface.textAlign = "left";
+
+                    var fontSize = getFontSize(32);
+
+                    drawingSurface.font = "normal normal " + fontSize.toString() + "pt " + font;
+                    drawingSurface.fillStyle = "rgba(255, 255, 255, 1)";
+                    drawingSurface.textBaseline = "bottom";
+					
+					var ITEMSPERPAGE = 5;
+					
+
+                    if (rankState === LOCAL) {
+						
+						if ((page * ITEMSPERPAGE) > highscoresList.length - ITEMSPERPAGE + 1)
+						{
+							pageDownButton.active = false;
+						}
+						else
+						{
+							pageDownButton.active = true;
+						}
+						if (page < 2)
+						{
+							pageUpButton.active = false;
+						}
+						else
+						{
+							pageUpButton.active = true;
+						}
+						
+						
+						highscoresList = JSON.parse(localStorage.getItem("high score list"));
+						highscoresDates = JSON.parse(localStorage.getItem("high score dates"));
+                        for (var i = (page - 1) * ITEMSPERPAGE; i < Math.min(highscoresList.length, page * ITEMSPERPAGE); i++) {
+                            if (highscoresList[i] != 0) {
+                                drawingSurfacefillText((i + 1).toString() + ". ", 432 * horizontalScale, (300 + ((i - ((page - 1) * ITEMSPERPAGE)) * 48)) * verticalScale);
+                                drawingSurfacefillText(highscoresList[i], 532 * horizontalScale, (300 + ((i - ((page - 1) * ITEMSPERPAGE)) * 48)) * verticalScale);
+                                drawingSurfacefillText(highscoresDates[i], 732 * horizontalScale, (300 + ((i - ((page - 1) * ITEMSPERPAGE)) * 48)) * verticalScale);
+                            }
+                        }
+                    }
+                    else {
+                        if (typeof thisPlayer !== "undefined") {
+							if ((page * ITEMSPERPAGE) > Math.min(globalHighScores.length, 100) - ITEMSPERPAGE + 1)
+							{
+								pageDownButton.active = false;
+							}
+							else
+							{
+								pageDownButton.active = true;
+							}
+							if (page < 2)
+							{
+								pageUpButton.active = false;
+							}
+							else
+							{
+								pageUpButton.active = true;
+							}
+							renderGlobalHighscores();
+                        }
+                        else {
+                            var fontSize = getFontSize(35);
+
+                            drawingSurface.font = "normal normal " + fontSize.toString() + "pt " + font;
+
+                            drawingSurfacefillText("Internet Unavailable", 500 * horizontalScale, (350) * verticalScale);
+
+                            var fontSize = getFontSize(20);
+
+                            drawingSurface.font = "normal normal " + fontSize.toString() + "pt " + font;
+
+                            drawingSurfacefillText("Please close app, connect to the internet, and then reopen app.", 310 * horizontalScale, (400) * verticalScale);
+                        }
+                    }
+                }
+                if (menuState ===  CARS || lastState === CARS) {
+                    var fontSize = getFontSize(48);
+
+                    drawingSurface.font = "normal normal " + fontSize.toString() + "pt " + font;
+                    drawingSurface.fillStyle = "rgba(255, 255, 255, 1)";
+                    drawingSurface.textBaseline = "bottom";
+					drawingSurface.textAlign = "center";
+                    drawingSurfacefillText("Cars", (1366/2) * horizontalScale, 275 * verticalScale);
+					drawingSurface.textAlign = "left";
+
+                    for (var i = (carPage - 1) * 8; i < carPage * 8; i++) {
+
+                        drawSprite(carButtons[i], image, MENU);
+                    }
+                    drawSprite(carSelectObject, image, MENU);
+
+                    if (carButtons[hoverCar].alpha > .75 && hoverCar < carPage * 8 && hoverCar >= (carPage - 1) * 8) {
+                        var fontSize = getFontSize(36);
+
+                        drawingSurface.font = "normal normal " + fontSize.toString() + "pt " + font;
+                        drawingSurface.fillStyle = "rgba(255, 255, 255, 1)";
+                        drawingSurface.textBaseline = "top";
+						drawingSurface.textAlign = "center";
+
+                        var infoText = carName[hoverCar] + ": " + carScores[hoverCar].toString();
+                        if (carUnlockTypes[hoverCar] === "Donate") {
+                            var infoText = carName[hoverCar] + ": " + "Donate to Unlock";
+
+                        }
+						if (carUnlockTypes[hoverCar] === "Games") {
+							var infoText = carName[hoverCar] + ": " + "Play " + carScores[hoverCar].toString() + " games";
+		
+						}
+						if (carUnlockTypes[hoverCar] === "Row") {
+							var infoText = carName[hoverCar] + ": " + "Score 100+ " + carScores[hoverCar].toString() + "x in a row";
+
+						}
+
+                        drawingSurfacefillText(infoText, (WINDOWWIDTH / 2) * horizontalScale, (carY + carButtonObject.height + 15) * verticalScale);
+						
+						drawingSurface.textAlign = "left";
+
+                    }
+                }
+                if (menuState === BACKGROUNDS  || lastState === BACKGROUNDS) {
+                    var fontSize = getFontSize(48);
+
+                    drawingSurface.font = "normal normal " + fontSize.toString() + "pt " + font;
+                    drawingSurface.fillStyle = "rgba(255, 255, 255, 1)";
+                    drawingSurface.textBaseline = "bottom";
+                    drawingSurface.textAlign = "center";
+                    drawingSurfacefillText("Backgrounds", (1366/2) * horizontalScale, 275 * verticalScale);
+					drawingSurface.textAlign = "left";
+
+                    for (var i = 0; i < screenButtons.length; i++) {
+
+                        drawSprite(screenButtons[i], image, MENU);
+                    }
+
+                    drawSprite(screenSelectObject, image, MENU);
+
+                    if (screenSelectObject.alpha > 0) {
+                        var fontSize = getFontSize(36);
+
+                        drawingSurface.font = "normal normal " + fontSize.toString() + "pt " + font;
+                        drawingSurface.fillStyle = "rgba(255, 255, 255, 1)";
+						drawingSurface.textAlign = "center";
+                        drawingSurface.textBaseline = "bottom";
+
+                        var infoText = screenNames[hoverScreen] + ": " + screenScores[hoverScreen].toString();
+                        if (screenUnlockTypes[hoverScreen] === "Donate") {
+                            var infoText = screenNames[hoverScreen] + ": " + "Donate to Unlock";
+
+                        }
+
+                        drawingSurfacefillText(infoText, (1366 / 2) * horizontalScale, (530) * verticalScale);
+						
+						drawingSurface.textAlign = "left";
+                    }
+                }
+
+                var fontSize = getFontSize(32);
+
+                //var text = document.createElement("text");
+                //text.style.fontSize = "20pt";
+                //text.innerHTML = nickName;
+                //console.log(text.offsetWidth);
+                //var nameWidth = text.offsetWidth;
+
+
+                drawingSurface.font = "normal normal " + fontSize.toString() + "pt " + font;
+                drawingSurface.fillStyle = "rgba(255, 255, 255, 1)";
+                drawingSurface.textBaseline = "top";
+				
+				var nameWidth = Math.ceil(drawingSurface.measureText(nickName).width / horizontalScale);
+
+                var nickNameX = 726 - 10 - nameWidth - (horizontalOffset/2);
+
+                nameButton.x = nickNameX;
+                nameButton.width = nameWidth / horizontalScale;
+				
+				if (!transitioning)
+				{				
+					drawingSurfacefillText(nickName, (nickNameX - moveTime) * horizontalScale, (25 + (verticalOffset/2)) * verticalScale);
+				}
+				
+				if (menuState === SIDEBAR)
+				{
+					sideBar.x = horizontalOffset/2;
+					switch(sideBarState)
+					{
+						case 0:
+							infoButton.flexible = false;
+							sideBar.y += 768 / 30;
+							if (sideBar.y >= 0)
+							{
+								sideBar.y = 0;
+								sideBarState = 1;
+							}
+							break;
+						case 1:
+							if (down === false) {
+								sideBarState = 2;
+							}
+							break;
+						case 2:
+							if (down)
+							{
+								if (hitTestPoint(pointerX + (horizontalOffset / 2), pointerY + (verticalOffset / 2), sideBar) === false) {
+									sideBarState = 3;
+								}
+							}
+							break;
+						case 3:
+							sideBar.y -= 768 / 30;
+							if (sideBar.y <= -768)
+							{
+								for (var i = 0; i < buttons.length; i++)
+								{
+									if (buttons[i].state === lastState && buttons[i].active)
+									{
+										drawSprite(buttons[i], image, MENU);
+										if (!(typeof buttons[i].text === "undefined")) {
+											console.log(buttons[i].text);
+											var fontSize = getFontSize(25);
+
+											drawingSurface.font = "normal normal " + fontSize.toString() + "pt " + font;
+											drawingSurface.fillStyle = "rgba(255, 255, 255, 1)";
+											drawingSurface.textBaseline = "top";
+
+											drawingSurfacefillText(buttons[i].text, (buttons[i].textX()) * horizontalScale, (buttons[i].textY()) * verticalScale);
+
+										}
+									}
+								}
+								sideBar.y = -768;
+								sideBarState = 0;
+								menuState = lastState;
+								infoButton.flexible = true;
+								lastState = -1;
+							}
+							break;
+					}
+					infoButton.y = sideBar.y + 768 + 5;
+					
+					for (var i = 0; i < buttons.length; i++)
+					{
+						if (buttons[i].state === lastState && buttons[i].active)
+						{
+							drawSprite(buttons[i], image, MENU);
+							if (!(typeof buttons[i].text === "undefined")) {
+								console.log(buttons[i].text);
+								var fontSize = getFontSize(25);
+
+								drawingSurface.font = "normal normal " + fontSize.toString() + "pt " + font;
+								drawingSurface.fillStyle = "rgba(255, 255, 255, 1)";
+								drawingSurface.textBaseline = "top";
+
+								drawingSurfacefillText(buttons[i].text, (buttons[i].textX()) * horizontalScale, (buttons[i].textY()) * verticalScale);
+
+							}
+						}
+					}
+					
+					drawSprite(sideBar, image, MENU);
+					
+					
+					
+					var fontSize = getFontSize(36);
+
+                    drawingSurface.font = "normal normal " + fontSize.toString() + "pt " + font;
+                    drawingSurface.fillStyle = "rgba(255, 255, 255, .7)";
+                    drawingSurface.textBaseline = "top";
+					
+                    drawingSurfacefillText("About", (5 - moveTime + (horizontalOffset / 2)) * horizontalScale, sideBar.y + 15 * verticalScale);
+					
+					var fontSize = getFontSize(30);
+
+                    drawingSurface.font = "normal normal " + fontSize.toString() + "pt " + font;
+					
+                    drawingSurfacefillText("Music:", (5 - moveTime + (horizontalOffset / 2)) * horizontalScale, sideBar.y + 210 * verticalScale);
+					
+					drawingSurfacefillText("Special Thanks to:", (5 - moveTime + (horizontalOffset / 2)) * horizontalScale, sideBar.y + 480 * verticalScale);
+					
+					var fontSize = getFontSize(24);
+
+                    drawingSurface.font = "normal normal " + fontSize.toString() + "pt " + font;
+					
+                    drawingSurfacefillText("Copyright © 2014 Paul Jasek.", (5 - moveTime + (horizontalOffset / 2)) * horizontalScale, sideBar.y + 100 * verticalScale);
+					drawingSurfacefillText("All rights reserved.", (5 - moveTime + (horizontalOffset / 2)) * horizontalScale, sideBar.y + 130 * verticalScale);
+					
+					drawingSurfacefillText("\"Move Forward\" Kevin " , (5 - moveTime + (horizontalOffset / 2)) * horizontalScale, sideBar.y + 260 * verticalScale);
+					drawingSurfacefillText("MacLeod (incompetech.com) " , (5 - moveTime + (horizontalOffset / 2)) * horizontalScale, sideBar.y + 290 * verticalScale);
+					drawingSurfacefillText("Licensed under Creative " , (5 - moveTime + (horizontalOffset / 2)) * horizontalScale, sideBar.y + 320 * verticalScale);
+					drawingSurfacefillText("Commons: By Attribution 3.0" , (5 - moveTime + (horizontalOffset / 2)) * horizontalScale, sideBar.y + 350 * verticalScale);
+					drawingSurfacefillText("http:\/\/creativecommons.org" , (5 - moveTime + (horizontalOffset / 2)) * horizontalScale, sideBar.y + 380 * verticalScale);
+					drawingSurfacefillText("/licenses/by/3.0/" , (5 - moveTime + (horizontalOffset / 2)) * horizontalScale, sideBar.y + 410 * verticalScale);
+					
+					drawingSurfacefillText("Chris Jasek" , (5 - moveTime + (horizontalOffset / 2)) * horizontalScale, sideBar.y + 540 * verticalScale);
+					drawingSurfacefillText("Daniel Jasek" , (5 - moveTime + (horizontalOffset / 2)) * horizontalScale, sideBar.y + 580 * verticalScale);
+					drawingSurfacefillText("Elizabeth Jasek" , (5 - moveTime + (horizontalOffset / 2)) * horizontalScale, sideBar.y + 620 * verticalScale);
+					drawingSurfacefillText("Jacob Wright" , (5 - moveTime + (horizontalOffset / 2)) * horizontalScale, sideBar.y + 660 * verticalScale);
+					
+					
+				}
+
+                if (gameState === MENU) {
+                    if (blackScreen.alpha > 0) {
+                        blackScreen.alpha = 1 - (gameTime / 50);
+                        drawSprite(blackScreen, image, MENU);
+                    }
+                }
+				
+				if (reviewTime > 0 && !transitioning)
+				{
+					if (down)
+					{
+						if (hitTestPoint(pointerX + (horizontalOffset / 2), pointerY + (verticalOffset / 2), notification))
+						{
+							review = "true";
+							localStorage.setItem("review", "true");
+							CocoonJS.App.openURL("https://play.google.com/store/apps/details?id=com.simplysevenstudios.curvycar");
+							reviewTime = Math.min(75, reviewTime);
+						}
+					}
+					reviewTime--;
+					notification.x = Math.min(notification.x + ((600 - reviewTime) * 2), horizontalOffset/2);
+					if (reviewTime < 75)
+					{
+						notification.alpha = Math.max(Math.min(reviewTime / 100, .75), 0);
+					}
+					drawSprite(notification, image, MENU);
+					
+					var fontSize = getFontSize(25);
+
+					drawingSurface.font = "normal normal " + fontSize.toString() + "pt " + font;
+					drawingSurface.fillStyle = "rgba(255, 255, 255, "+ notification.alpha + ")";
+					drawingSurface.textBaseline = "top";
+					drawingSurfacefillText("If you enjoy using Curvy Car please take a", (notification.x + 15) * horizontalScale, 105 * verticalScale);
+					drawingSurfacefillText("moment to rate it. Thanks for your support!", (notification.x + 15) * horizontalScale, 145 * verticalScale);
+					drawingSurface.textBaseline = "bottom";
+				}
+
+            }
+        }
+
+
+
+        function playGame() {
+
+            gameTime++;
+
+            if (car.state === "going") {
+                if (score > 0) {
+                    car.speed += .00025;
+                }
+            }
+            else if (car.state === "accelerating") {
+                car.accel += .0005;
+                car.speed += car.accel;
+                if (car.speed >= car.maxSpeed) {
+                    car.speed = car.maxSpeed;
+                    car.state = "going";
+                    carSound1.play();
+                }
+            }
+            else if (car.state === "starting") {
+                if (gameTime > 90) {
+                    car.state = "accelerating";
+                }
+            }
+
+            controlCar(car);
+
+            moveCamera();
+
+            move(roads);
+			moveRoadCollideObjects(roads);
+            move(banners);
+			move(grounds);
+
+            cycleBackgrounds();
+
+            if (carSound1.currentTime > 4.4) {
+                carSound2.play();
+            }
+            if (carSound2.currentTime > 4.4) {
+                carSound1.play();
+            }
+
+            addRoad();
+
+            animateSprites(sprites);
+
+            remove(roads);
+
+            addScore();
+
+            render();
+
+            if (onRoad === "false") {
+                timesPlayed++;
+				localStorage.setItem("timesPlayed", timesPlayed);
+				
+				if (timesPlayed % 50 === 25)
+				{
+					readyForReview = true;
+				}
+				
+				tutorial = false;
+				localStorage.setItem("tutorial", tutorial);
+
+                down = false;
+                enter = false;
+                newHighScore = false;
+                newCarUnlocked = false;
+                unlockedCarName = "";
+				
+				if (over100 > over100record) {
+                        over100record = over100;
+                        localStorage.setItem("over100record", over100record);
+                }
+				
+				
+				if (score >= 100) {
+                    over100++;
+                    localStorage.setItem("over100", over100);
+					if (over100 > over100record)
+                    {
+                        over100record = over100;
+                        localStorage.setItem("over100record", over100record);
+                    }
+                }
+                else {
+                    over100 = 0;
+                    localStorage.setItem("over100", over100);
+                }
+				
+				highscoresList = JSON.parse(localStorage.getItem("high score list"));
+				highscoresDates = JSON.parse(localStorage.getItem("high score dates"));
+
+                changeHighscore(score, highscoresList, highscoresDates);
+				
+				localStorage.setItem("high score list", JSON.stringify(highscoresList));
+				localStorage.setItem("high score dates", JSON.stringify(highscoresDates));
+
+
+                if (newHighScore) {
+                    for (var i = 1; i < banners.length; i++) {
+                        if (highscoresList[0] >= banners[i].score) {
+                            newCarUnlocked = true;
+                            unlockedCarName = banners[i].name;
+
+                            displayCars = [];
+                            for (var j = 0; j < banners[i].sources.length; j++) {
+								if (banners[i].type === "car")
+								{
+									var newDisplayCar = Object.create(displayCarObject);
+									newDisplayCar.sourceX = banners[i].sources[j] * 50;
+								}
+								else if (banners[i].type === "screen")
+								{
+									var newDisplayCar = Object.create(displayScreenObject);
+									newDisplayCar.sourceX += banners[i].sources[j] * newDisplayCar.sourceWidth;
+								}								                                
+                                newDisplayCar.x = (WINDOWWIDTH / 2 - (newDisplayCar.width / 2)) - ((banners[i].sources.length - 1) * 100) + (j * 200);
+                                newDisplayCar.y = 768 + 250;
+                                displayCars.push(newDisplayCar);
+                                console.log(newDisplayCar.sourceX);
+                            }
+                        }
+                    }
+                }
+
+                
+
+                gameState = WAITING;
+                menuState = WAITING;
+
+                carSound1.pause();
+                carSound2.pause();
+
+                deathSound.play();
+
+                resetWait();
+
+                updateGlobalHighscores();
+                updateGlobalHighscores();
+
+            }
+
+            checkButtons();
+        }
+
+        function resetWait() {
+
+            waitCounter = 0;
+            carScreen = false;
+			zoomCar = false;
+
+            if (newCarUnlocked) {
+                waitCounter = -768;
+                blackScreen.height = 768 * 2;
+                carScreen = true;
+				zoomCar = true;
+            }
+            else {
+                blackScreen.height = 768;
+            }
+
+            buttons = [];
+
+            buttons.push(playAgainButton);
+
+            menuButton.state = WAITING;
+            menuButton.y = 500;
+            buttons.push(menuButton);
+
+
+            blackScreen.alpha = 0.5;
+
+            down = false;
+            wasDown = false;
+        }
+
+        function changeHighscore(score, highscoreList, highscoreDates, date) {
+            for (var i = 0; i < highscoreList.length; i++) {
+                if (score > highscoreList[i]) {
+                    if (i === 0) {
+                        newHighScore = true;
+                    }
+                    changeHighscore(highscoreList[i], highscoreList, highscoreDates, highscoreDates[i]);
+                    highscoreList[i] = score;
+
+                    if (typeof date === "undefined") {
+                        var today = new Date();
+                        var dd = today.getDate();
+                        var mm = today.getMonth() + 1;
+
+                        var yyyy = today.getFullYear();
+                        if (dd < 10) { dd = '0' + dd } if (mm < 10) { mm = '0' + mm } today = mm + '/' + dd + '/' + yyyy;
+
+                        highscoreDates[i] = today;
+                    }
+                    else {
+                        highscoreDates[i] = date;
+                    }
+                    break;
+                }
+            }
+        }
+
+        function addScore() {
+            for (var i = 0; i < roads.length; i++) {
+                if (!roads[i].passed) {
+                    if (hitTestRectangle(car, roads[i])) {
+                        roads[i].passed = true;
+                        scoreTransparency = 1;
+                        score += 1;
+                        if (score % 5 === 0 && false) {
+                            scoreSound.play();
+                        }
+                    }
+                }
+            }
+        }
+
+        function hitTestRectangle(r1, r2) {
+            var hit = false;
+
+            var vx = r1.centerX() - r2.centerX();
+            var vy = r1.centerY() - r2.centerY();
+
+            var combinedHalfWidths = r1.halfWidth() + r2.halfWidth();
+            var combinedHalfHeights = r1.halfHeight() + r2.halfHeight();
+
+            if (Math.abs(vx) < combinedHalfWidths) {
+                if (Math.abs(vy) < combinedHalfHeights) {
+                    hit = true;
+                }
+                else {
+                    hit = false;
+                }
+            }
+            else {
+                hit = false;
+            }
+
+            return hit;
+        }
+		
+		function hitTestPointCircle(c1, x , y)
+		{
+		  //Calculate the vector between the circles’ center points
+		  var vx = c1.centerX() - x;
+		  var vy = c1.centerY() - y;
+		  
+		  //Find the distance between the circles by calculating
+		  //the vector's magnitude (how long the vector is)  
+		  var magnitude = Math.sqrt(vx * vx + vy * vy);
+		  
+		  //Add together the circles' total radii
+		  var totalRadii = c1.width/2;
+		  
+		  //Set hit to true if the distance between the circles is
+		  //less than their totalRadii
+		  var hit = magnitude < totalRadii;
+		  
+		  return hit;
+		}
+
+        function detectIfOnRoad() {
+            var xOff = 8;
+            var yOff = 12;
+			
+			for (var i = 0; i < roads.length; i++)
+			{
+			    if(hitTestRectangle(roads[i], car))
+			    {
+				
+                    if (hitTestPoint(Math.floor(getRotationPoint(car.x + xOff, car.y + yOff, car.rotation)[0]), Math.floor(getRotationPoint(car.x + xOff, car.y + yOff, car.rotation)[1]), roads[i]) || hitTestPoint(Math.floor(getRotationPoint(car.x + car.width - xOff, car.y + yOff, car.rotation)[0]), Math.floor(getRotationPoint(car.x + car.width - xOff, car.y + yOff, car.rotation)[1]), roads[i]))
+                    {
+                        if (roads[i].shouldCollide.length > 0)
+                        {
+
+                            for (var j = 0; j < roads[i].shouldCollide.length; j++)
+                            {
+                                if (hitTestPointCircle(roads[i].shouldCollide[j], Math.floor(getRotationPoint(car.x + xOff, car.y + yOff, car.rotation)[0]), Math.floor(getRotationPoint(car.x + xOff, car.y + yOff, car.rotation)[1])))
+                                {
+                                    //console.log("point 1");
+                                    return "false";
+                                }
+                                if (hitTestPointCircle(roads[i].shouldCollide[j], Math.floor(getRotationPoint(car.x + car.width - xOff, car.y + yOff, car.rotation)[0]), Math.floor(getRotationPoint(car.x + car.width - xOff, car.y + yOff, car.rotation)[1])))
+                                {
+                                    //console.log("point 2");
+                                    return "false";
+                                }
+
+                            }
+                            for (var j = 0; j < roads[i].shouldNotCollide.length; j++)
+                            {
+                                if (!hitTestPointCircle(roads[i].shouldNotCollide[j], Math.floor(getRotationPoint(car.x + xOff, car.y + yOff, car.rotation)[0]), Math.floor(getRotationPoint(car.x + xOff, car.y + yOff, car.rotation)[1])))
+                                {
+                                    //console.log("point 3");
+
+                                    return "false";
+                                }
+                                if (!hitTestPointCircle(roads[i].shouldNotCollide[j], Math.floor(getRotationPoint(car.x + car.width - xOff, car.y + yOff, car.rotation)[0]), Math.floor(getRotationPoint(car.x + car.width - xOff, car.y + yOff, car.rotation)[1])))
+                                {
+                                    //console.log("point 4");
+
+                                    return "false";
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (hitTestRectangle(car, roads[i]))
+                            {
+                                if (!hitTestRoad(Math.floor(getRotationPoint(car.x + xOff, car.y + yOff, car.rotation)[0]), Math.floor(getRotationPoint(car.x + xOff, car.y + yOff, car.rotation)[1]), roads[i]))
+                                {
+                                    return "false";
+                                }
+                                if (!hitTestRoad(Math.floor(getRotationPoint(car.x + car.width - xOff, car.y + yOff, car.rotation)[0]), Math.floor(getRotationPoint(car.x + car.width - xOff, car.y + yOff, car.rotation)[1]), roads[i]))
+                                {
+                                return "false";
+                                }
+                            }
+                        }
+
+                    }
+				}
+				
+			}
+			
+			return "true";
+
+        }
+
+        function getRotationPoint(x, y, a) {
+
+            x -= car.centerX();
+            y -= car.centerY();
+
+            var x1 = x * Math.cos(a * Math.PI / 180) - y * Math.sin(a * Math.PI / 180);
+            var y1 = y * Math.cos(a * Math.PI / 180) + x * Math.sin(a * Math.PI / 180);
+
+            x1 += car.centerX();
+            y1 += car.centerY();
+            /*y1 -= verticalOffset / 2
+            x1 -= horizontalOffset / 2;
+            x1 *= horizontalScale;
+            y1 *= verticalScale;*/
+
+            return [x1, y1];
+        }
+
+        function moveCamera() {
+            var cameraBoundary = (canvas.width * 4 / (10 * horizontalScale)) + (horizontalOffset / 2);
+
+            cameramx = 0;
+
+            if (car.x + car.halfWidth() > 1366 - cameraBoundary) {
+                cameramx = (1366 - cameraBoundary - (car.x + car.halfWidth()));
+            }
+            if (car.x + car.halfWidth() < cameraBoundary) {
+                cameramx = (cameraBoundary - (car.x + car.halfWidth()));
+            }
+
+            car.x += cameramx;
+        }
+
+        function cycleBackgrounds() {
+            for (var i = 0; i < grounds.length; i++) {
+                if (grounds[i].y > 768) {
+                    grounds[i].y -= 1534;
+                }
+                if (grounds[i].x > 1366) {
+                    grounds[i].x -= 2730;
+                }
+                if (grounds[i].x < -1366) {
+                    grounds[i].x += 2730;
+                }
+            }
+        }
+
+        function move(sprites) {
+            for (var i = 0; i < sprites.length; i++) {
+                sprites[i].y += car.ySpeed * sprites[i].moveRatio;
+                sprites[i].x += cameramx * sprites[i].moveRatio;
+            }
+        }
+		
+		function moveRoadCollideObjects(roads) {
+            for (var j = 0; j < roads.length; j++) {
+				for (var i = 0; i < roads[j].shouldCollide.length; i++) {
+					roads[j].shouldCollide[i].y += car.ySpeed * roads[j].moveRatio;
+					roads[j].shouldCollide[i].x += cameramx * roads[j].moveRatio
+				}
+				for (var i = 0; i < roads[j].shouldNotCollide.length; i++) {
+					roads[j].shouldNotCollide[i].y += car.ySpeed * roads[j].moveRatio;
+					roads[j].shouldNotCollide[i].x += cameramx * roads[j].moveRatio
+				}
+            }
+        }
+
+        function addRoad() {
+            if (roads[roads.length - 1].y > -94) {
+                var yRoadPos = roads[roads.length - 1].y;
+                var xRoadPos = roads[roads.length - 1].x;
+
+                roadsAdded++;
+
+                var placeBanner = false;
+                var bannerNum = 0;
+
+                for (var i = 0; i < banners.length; i++) {
+                    if (banners[i].score === roadsAdded) {
+                        placeBanner = true;
+                        bannerNum = i;
+                    }
+                }
+
+                var previousRoadDir = roadDirection;
+
+                if (roadDirection === -1) {
+                    switch (Math.floor(Math.random() * 2) + 1) {
+                        case 1:
+                            var newRoad = Object.create(roadCurveBackRightObject);
+                            newRoad.x = xRoadPos - newRoad.width + 3;
+                            newRoad.y = yRoadPos - newRoad.height + 94;
+							
+							var newShouldCollideCircle = Object.create(shouldCollideCircle);
+							newShouldCollideCircle.x = newRoad.x + newRoad.width - newShouldCollideCircle.width/2;
+							newShouldCollideCircle.y = newRoad.y - newShouldCollideCircle.height/2;
+							newRoad.shouldCollide = [newShouldCollideCircle];
+							
+							var newShouldNotCollideCircle = Object.create(shouldNotCollideCircle);
+							newShouldNotCollideCircle.x = newRoad.x + newRoad.width - newShouldNotCollideCircle.width/2;
+							newShouldNotCollideCircle.y = newRoad.y - newShouldNotCollideCircle.height/2;
+							newRoad.shouldNotCollide = [newShouldNotCollideCircle];
+							
+                            roads.push(newRoad);
+                            roadDirection = 0;
+                            break;
+                        case 2:
+                            var newRoad = Object.create(roadSideWaysObject);
+                            newRoad.x = xRoadPos - newRoad.width + 3;
+                            newRoad.y = yRoadPos - newRoad.height + 94;
+                            roads.push(newRoad);
+                            break;
+                    }
+
+                }
+                else if (roadDirection === 1) {
+                    switch (Math.floor(Math.random() * 2) + 1) {
+                        case 1:
+                            var newRoad = Object.create(roadCurveBackLeftObject);
+                            newRoad.x = xRoadPos + roads[roads.length - 1].width - 3;
+                            newRoad.y = yRoadPos - newRoad.height + 94;
+							
+							var newShouldCollideCircle = Object.create(shouldCollideCircle);
+							newShouldCollideCircle.x = newRoad.x - newShouldCollideCircle.width/2;
+							newShouldCollideCircle.y = newRoad.y - newShouldCollideCircle.height/2;
+							newRoad.shouldCollide = [newShouldCollideCircle];
+							
+							var newShouldNotCollideCircle = Object.create(shouldNotCollideCircle);
+							newShouldNotCollideCircle.x = newRoad.x - newShouldNotCollideCircle.width/2;
+							newShouldNotCollideCircle.y = newRoad.y - newShouldNotCollideCircle.height/2;
+							newRoad.shouldNotCollide = [newShouldNotCollideCircle];
+							
+                            roads.push(newRoad);
+                            roadDirection = 0;
+                            break;
+                        case 2:
+                            var newRoad = Object.create(roadSideWaysObject);
+                            newRoad.x = xRoadPos + roads[roads.length - 1].width - 3;
+                            newRoad.y = yRoadPos - newRoad.height + 94;
+                            roads.push(newRoad);
+                            break;
+                    }
+                }
+                else {
+                    switch (Math.floor(Math.random() * 3) + 1) {
+                        case 1:
+                            var newRoad = Object.create(roadCurveObject);
+                            newRoad.x = xRoadPos + roads[roads.length - 1].offsetX;
+                            newRoad.y = yRoadPos - newRoad.height + 3;
+							
+							var newShouldCollideCircle = Object.create(shouldCollideCircle);
+							newShouldCollideCircle.x = newRoad.x + newRoad.width - newShouldCollideCircle.width/2;
+							newShouldCollideCircle.y = newRoad.y + newRoad.height - newShouldCollideCircle.height/2;
+							newRoad.shouldCollide = [newShouldCollideCircle];
+							
+							var newShouldNotCollideCircle = Object.create(shouldNotCollideCircle);
+							newShouldNotCollideCircle.x = newRoad.x + newRoad.width - newShouldNotCollideCircle.width/2;
+							newShouldNotCollideCircle.y = newRoad.y + newRoad.height - newShouldNotCollideCircle.height/2;
+							newRoad.shouldNotCollide = [newShouldNotCollideCircle];
+							
+                            roads.push(newRoad);
+                            roadDirection = 1;
+                            break;
+                        case 2:
+                            var newRoad = Object.create(roadCurveLeftObject);
+                            newRoad.x = xRoadPos + roads[roads.length - 1].offsetX - 84;
+                            newRoad.y = yRoadPos - newRoad.height + 3;
+							
+							var newShouldCollideCircle = Object.create(shouldCollideCircle);
+							newShouldCollideCircle.x = newRoad.x - newShouldCollideCircle.width/2;
+							newShouldCollideCircle.y = newRoad.y + newRoad.height - newShouldCollideCircle.height/2;
+							newRoad.shouldCollide = [newShouldCollideCircle];
+							
+							var newShouldNotCollideCircle = Object.create(shouldNotCollideCircle);
+							newShouldNotCollideCircle.x = newRoad.x - newShouldNotCollideCircle.width/2;
+							newShouldNotCollideCircle.y = newRoad.y + newRoad.height - newShouldNotCollideCircle.height/2;
+							newRoad.shouldNotCollide = [newShouldNotCollideCircle];
+							
+                            roads.push(newRoad);
+                            roadDirection = -1;
+                            break;
+                        case 3:
+                            var newRoad = Object.create(roadObject);
+                            newRoad.x = xRoadPos + roads[roads.length - 1].offsetX;
+                            newRoad.y = yRoadPos - newRoad.height + 3;
+                            roads.push(newRoad);
+                            roadDirection = 0;
+                            break;
+                    }
+                }
+
+                if (placeBanner) {
+                    banners[bannerNum].rotation = newRoad.rotation;
+                    banners[bannerNum].x = newRoad.x;
+                    banners[bannerNum].y = newRoad.y + newRoad.height;
+                    if (newRoad.flippedh) {
+                        banners[bannerNum].rotation = 90;
+                    }
+                    if (newRoad.flipped && !newRoad.flippedh) {
+                        banners[bannerNum].x += 86;
+                    }
+                    if (newRoad.flippedh && !newRoad.flipped) {
+                        banners[bannerNum].x += 138;
+                    }
+                    if (newRoad.flippedh && newRoad.flipped) {
+                        banners[bannerNum].x -= 20;
+                    }
+                    if (newRoad.width === 210) {
+                        banners[bannerNum].rotation = 90;
+                    }
+                    if (banners[bannerNum].rotation === 90) {
+                        banners[bannerNum].y = newRoad.y + newRoad.height - 57;
+                    }
+                    if (previousRoadDir === -1) {
+                        banners[bannerNum].rotation = -90;
+                    }
+                    if (previousRoadDir === 1) {
+                        banners[bannerNum].rotation = 90;
+                    }
+                    banners[bannerNum].visible = true;
+                }
+            }
+        }
+
+        function animateSprites(sprites) {
+            for (var i = 0; i < sprites.length; i++) {
+                if (sprites[i].animated) {
+                    animateSprite(sprites[i], i);
+                }
+            }
+        }
+
+        function animateSprite(sprite, spriteNum) {
+            sprite.counter += 1;
+            if (sprite.counter >= sprite.speed) {
+                sprite.counter = 0;
+
+                sprite.row++;
+                if (sprite.row >= sprite.rows) {
+                    sprite.row -= sprite.rows;
+                    sprite.collumn++;
+                }
+
+                sprite.sourceX = sprite.startX + (sprite.row * sprite.sourceWidth);
+                sprite.sourceY = sprite.startY + (sprite.collumn * sprite.sourceHeight);
+
+                if (sprite.collumn >= sprite.collumns) {
+                    sprites.splice(spriteNum, 1);
+                }
+            }
+        }
+
+
+        function controlCar(car) {
+            if (gameState === PLAYING) {
+                var moveAmount = car.speed / 2;
+                var maxRotation = 90;
+
+                if (!rightSide && !leftSide) {
+                    if (car.rotation > 0) {
+                        car.rotation -= moveAmount;
+                    }
+                    if (car.rotation < 0) {
+                        car.rotation += moveAmount;
+                    }
+                }
+                else {
+                    if (score > 0) {
+                        if (rightSide) {
+                            car.rotation += moveAmount;
+                        }
+                        if (leftSide) {
+                            car.rotation -= moveAmount;
+                        }
+                    }
+                }
+
+                if (Math.abs(car.rotation) < moveAmount) {
+                    car.rotation = 0;
+                }
+
+                if (car.rotation > maxRotation) {
+                    car.rotation = maxRotation;
+                }
+                else if (car.rotation < -maxRotation) {
+                    car.rotation = -maxRotation;
+                }
+
+                car.x += car.xSpeed;
+
+                if (car.x > 1366) {
+                    car.x = 1366;
+                }
+                if (car.x < 0) {
+                    car.x = 0;
+                }
+            }
+            else if (gameState === MENU || gameState === NAME) {
+                if (targetRotation === 90) {
+                    if (car.x > 1095) {
+                        targetRotation = 0;
+                    }
+                }
+                else if (targetRotation === 0) {
+                    if (car.y < 215) {
+                        targetRotation = -90;
+                    }
+                }
+                else if (targetRotation === -90) {
+                    if (car.x < 220) {
+                        targetRotation = -180;
+                    }
+                }
+                else if (targetRotation === -180) {
+                    if (car.y > 460) {
+                        targetRotation = 90;
+                        car.rotation = 180;
+                    }
+
+                }
+                if (car.rotation < targetRotation) {
+                    car.rotation += car.speed / 2;
+                }
+                if (car.rotation > targetRotation) {
+                    car.rotation -= car.speed / 2;
+                }
+
+            }
+            if (car.rotation >= 360) {
+                car.rotation -= 360;
+            }
+            else if (car.rotation <= -360) {
+                car.rotation += 360;
+            }
+
+            if (car.rotation > 0) {
+                car.xSpeed = Math.cos((90 - car.rotation) * Math.PI / 180) * car.speed;
+            }
+            else if (car.rotation < 0) {
+                car.xSpeed = -Math.cos((-90 - car.rotation) * Math.PI / 180) * car.speed;
+            }
+            else {
+                car.xSpeed = 0;
+            }
+
+            if (car.rotation <= 90 && car.rotation >= -90) {
+                car.ySpeed = Math.sqrt((car.speed * car.speed) - (car.xSpeed * car.xSpeed));
+            }
+            else {
+                car.ySpeed = -Math.sqrt((car.speed * car.speed) - (car.xSpeed * car.xSpeed));
+            }
+        }
+
+        function remove(sprites) {
+            var removed = 0;
+
+            for (var i = 0; i < sprites.length; i++) {
+                if (sprites[i].y > 768) {
+                    sprites.splice(i, 1);
+                    removed += 1;
+                }
+            }
+
+            return removed;
+        }
+
+        function timedRemove(objects) {
+            for (var i = 0; i < objects.length; i++) {
+                objects[i].time -= 1;
+                if (objects[i].time < 0) {
+                    objects[i].alpha -= .2;
+                }
+                if (objects[i].time < 0) {
+                    objects.shift();
+                }
+            }
+        }
+
+        function moveSprites(sprites) {
+            for (var i = 0; i < sprites.length; i++) {
+                sprites[i].x += sprites[i].vx;
+                sprites[i].y += sprites[i].vy;
+
+                if (sprites[i].remove) {
+                    if ((sprites[i].y > WINDOWHEIGHT && sprites[i].vy >= 0) || (sprites[i].y < 0 && sprites[i].vy <= 0)) {
+                        sprites.splice(i, 1);
+                    }
+                }
+            }
+        }
+
+        function render() {
+            if (updateTime % FRAMESKIPRATE === 0)
+            {
+                if (display || true) {
+
+
+                    onRoad = detectIfOnRoad();
+
+
+                    //drawingSurface.clearRect(0, 0, canvas.width, canvas.height);
+
+                    for (var i = 0; i < grounds.length; i++) {
+                        drawSprite(grounds[i], ground);
+                    }
+
+                    //renderGroup(roads);
+					
+					for (var i = 0; i < roads.length; i++)
+					{
+						drawRoad(roads[i], image);
+					}
+
+                    renderGroup(banners);
+
+                    drawSprite(car, image);
+
+                    renderGroup(sprites);
+
+                    var fontSize = getFontSize(70);
+
+                    drawingSurface.font = "normal normal " + fontSize.toString() + "pt " + font;
+                    drawingSurface.fillStyle = "rgba(255, 255, 255, " + scoreTransparency + ")";
+                    drawingSurface.textBaseline = "top";
+
+                    if (!transitioning && gameState === PLAYING) {
+                        drawingSurfacefillText(score.toString(), ((horizontalOffset / 2) + 50) * horizontalScale, (5 + verticalOffset / 2) * verticalScale);
+                        if (scoreTransparency > .75) {
+                            scoreTransparency -= .02;
+                        }
+                    }
+
+
+                    var fontSize = getFontSize(20);
+                    drawingSurface.font = "normal normal " + fontSize.toString() + "pt " + font;
+
+                    if (gameState === WAITING) {
+                        drawWaitSprite(blackScreen, image, WAITING);
+                    }
+
+                    if (!transitioning) {
+                        for (var i = 0; i < buttons.length; i++) {
+                            if (buttons[i].state === gameState) {
+
+                                if (gameState === WAITING) {
+                                    drawWaitSprite(buttons[i], image, WAITING);
+                                }
+                                else {
+                                    drawSprite(buttons[i], image);
+                                }
+                                if (!(typeof buttons[i].text === "undefined")) {
+                                    var fontSize = getFontSize(50);
+
+                                    drawingSurface.font = "normal normal " + fontSize.toString() + "pt " + font;
+                                    drawingSurface.fillStyle = "rgba(255, 255, 255, 1)";
+                                    drawingSurface.textBaseline = "top";
+
+                                    drawingSurfacefillText(buttons[i].text, (buttons[i].textX()) * horizontalScale, (buttons[i].textY() - (768 - waitCounter)) * verticalScale);
+
+                                }
+                            }
+                        }
+                    }
+
+                    if (gameState === WAITING) {
+
+                        var fontSize = getFontSize(60);
+
+                        drawingSurface.font = "normal normal " + fontSize.toString() + "pt " + font;
+                        drawingSurface.fillStyle = "rgba(255, 255, 255, 1)";
+                        drawingSurface.textBaseline = "top";
+
+                        if (newHighScore) {
+                            drawingSurfacefillText("New High Score!", 390 * horizontalScale, (30 - (768 - waitCounter)) * verticalScale);
+                        }
+                        else {
+                            drawingSurfacefillText("Stay On The Road!", 350 * horizontalScale, (30 - (768 - waitCounter)) * verticalScale);
+                        }
+                        if (carScreen) {
+                            var fontSize = getFontSize(60);
+
+                            drawingSurface.font = "normal normal " + fontSize.toString() + "pt " + font;
+                            drawingSurface.fillStyle = "rgba(255, 255, 255, 1)";
+                            drawingSurface.textBaseline = "top";
+
+                            var unlockedString = unlockedCarName.toString() + " Unlocked!";
+
+                            drawingSurfacefillText(unlockedString, ((WINDOWWIDTH / 2) - (unlockedString.length * 60 / 40 * 13)) * horizontalScale, (30 - (-waitCounter)) * verticalScale);
+
+                            var fontSize = getFontSize(40);
+
+                            drawingSurface.font = "normal normal " + fontSize.toString() + "pt " + font;
+                            drawingSurface.fillStyle = "rgba(255, 255, 255, 1)";
+                            drawingSurface.textBaseline = "top";
+
+                            drawingSurfacefillText("Visit the Garage to equip", 380 * horizontalScale, (600 - (-waitCounter)) * verticalScale);
+
+                            for (var j = 0; j < displayCars.length; j++) {
+                                drawWaitSprite(displayCars[j], image, WAITING);
+                            }
+                        }
+
+                        var fontSize = getFontSize(50);
+
+                        drawingSurface.font = "normal normal " + fontSize.toString() + "pt " + font;
+
+                        drawingSurfacefillText("Score: " + score.toString(), 550 * horizontalScale, (210 - (768 - waitCounter)) * verticalScale);
+
+                    }
+
+
+                    if (gameState === PLAYING) {
+                        if (blackScreen.alpha > 0) {
+                            blackScreen.alpha = 1 - (gameTime / 50);
+                            drawSprite(blackScreen, image);
+                        }
+                    }
+					
+
+                    if (tutorial === true && gameState === PLAYING) {
+					
+						
+                        var fontSize = getFontSize(35);
+
+                        drawingSurface.font = "normal normal " + fontSize.toString() + "pt " + font;
+                        drawingSurface.fillStyle = "rgba(255, 255, 255, 1)";
+                        drawingSurface.textBaseline = "top";
+						drawingSurface.textAlign = "center";
+
+                        if (gameTime > 100 && gameTime < 350) {
+                            drawingSurfacefillText("Tap and hold the left side of the screen", (1366/2) * horizontalScale, 300 * verticalScale);
+							drawingSurfacefillText("to turn left.", (1366/2) * horizontalScale, 375 * verticalScale);
+                        }
+                        if (gameTime > 400 && gameTime < 650) {
+                            drawingSurfacefillText("Tap and hold the right side of the screen", (1366/2) * horizontalScale, 300 * verticalScale);
+							drawingSurfacefillText("to turn right.", (1366/2) * horizontalScale, 375 * verticalScale);
+                        }
+                        if (gameTime > 700 && gameTime < 950) {
+                            drawingSurfacefillText("When you stop touching the screen the car will", (1366/2) * horizontalScale, 300 * verticalScale);
+                            drawingSurfacefillText("return to forward position.", (1366/2) * horizontalScale, 375 * verticalScale);
+                        }
+                        if (gameTime > 1000 && gameTime < 1250) {
+                            var fontSize = getFontSize(55);
+
+                            drawingSurface.font = "normal normal " + fontSize.toString() + "pt " + font;
+                            drawingSurfacefillText("Stay on the Road!", (1366/2) * horizontalScale, 300 * verticalScale);
+                        }
+						drawingSurface.textAlign = "left";
+                    }
+                }
+                display = !display;
+            }
+        }
+
+        function renderGroup(sprites) {
+            if (sprites.length !== 0) {
+                for (var i = 0; i < sprites.length; i++) {
+                    drawSprite(sprites[i], image);
+                }
+            }
+        }
+
+        function drawingSurfacefillText(a, b, c) {
+            b = b / horizontalScale;
+            c = c / verticalScale;
+            b -= (horizontalOffset / 2);
+            c -= (verticalOffset / 2);
+            b *= horizontalScale;
+            c *= verticalScale;
+            
+            drawingSurface.save();
+            
+            drawingSurface.scale(scaleX, scaleY);
+            
+            drawingSurface.fillText(a, b, c);
+            
+            drawingSurface.restore();
+        }
+
+        function drawWaitSprite(sprite, image, state) {
+            drawingSurface.save();
+            
+            drawingSurface.scale(scaleX, scaleY);
+
+
+            if (typeof state === "undefined") {
+                state = PLAYING;
+            }
+
+            if (state === WAITING) {
+                drawingSurface.translate(Math.round((sprite.x - (horizontalOffset / 2)) * horizontalScale + ((sprite.width * horizontalScale / 2))), Math.round((sprite.y - (verticalOffset / 2) - (768 - waitCounter)) * verticalScale + (sprite.height * verticalScale / 2)));
+            }
+            else {
+                drawingSurface.translate(Math.round((sprite.x - (horizontalOffset / 2) + ((1366 - moveTime) * sprite.moveRatio)) * horizontalScale + ((sprite.width * horizontalScale / 2))), Math.round((sprite.y - (verticalOffset / 2)) * verticalScale + (sprite.height * verticalScale / 2)));
+            }
+
+            if (sprite.rotation !== 0) {
+                drawingSurface.rotate(sprite.rotation * Math.PI / 180);
+            }
+
+            if (sprite.alpha !== 1) {
+                drawingSurface.globalAlpha = sprite.alpha;
+            }
+
+            if (sprite.shadow) {
+                drawingSurface.shadowColor = "rgba(100,100,100,0.5)";
+                drawingSurface.shadowOffsetX = 3;
+                drawingSurface.shadowOffsetY = 3;
+                drawingSurface.shadowBlur = 3;
+            }
+
+            if (sprite.flipped) {
+                drawingSurface.scale(-1, 1);
+            }
+            if (sprite.flippedh) {
+                drawingSurface.scale(1, -1);
+            }
+            
+           
+
+
+            drawingSurface.drawImage
+            (
+                image,
+                Math.floor(sprite.sourceX), Math.floor(sprite.sourceY), Math.round(sprite.sourceWidth), Math.round(sprite.sourceHeight),
+                Math.round(-sprite.width * horizontalScale / 2), Math.round(-sprite.height * verticalScale / 2), Math.round(sprite.width * horizontalScale), Math.round(sprite.height * verticalScale)
+            );
+
+            drawingSurface.restore();
+        }
+
+        function drawSprite(sprite, image, state) {
+            if (sprite.visible) {
+                    drawingSurface.save();
+                    
+                    drawingSurface.scale(scaleX, scaleY);
+
+                    if (sprite.flexible) {
+                        sprite.changePos();
+                        if (sprite.wasDown) {
+                            sprite.y += 1;
+                        }
+                    }
+
+                    if (typeof state === "undefined") {
+                        state = PLAYING;
+                    }
+
+                    if (state === MENU) {
+                        drawingSurface.translate(Math.round((sprite.x - (horizontalOffset / 2) - (moveTime * sprite.moveRatio)) * horizontalScale + ((sprite.width * horizontalScale / 2))), Math.round((sprite.y - (verticalOffset / 2)) * verticalScale + (sprite.height * verticalScale / 2)));
+                    }
+                    else {
+                        drawingSurface.translate(Math.round((sprite.x - (horizontalOffset / 2) + ((1366 - moveTime) * sprite.moveRatio)) * horizontalScale + ((sprite.width * horizontalScale / 2))), Math.round((sprite.y - (verticalOffset / 2)) * verticalScale + (sprite.height * verticalScale / 2)));
+                    }
+
+                    if (sprite.rotation !== 0) {
+                        drawingSurface.rotate(sprite.rotation * Math.PI / 180);
+                    }
+
+                    if (sprite.alpha !== 1) {
+                        drawingSurface.globalAlpha = sprite.alpha;
+                    }
+
+                    if (sprite.shadow) {
+                        drawingSurface.shadowColor = "rgba(100,100,100,0.5)";
+                        drawingSurface.shadowOffsetX = 3;
+                        drawingSurface.shadowOffsetY = 3;
+                        drawingSurface.shadowBlur = 3;
+                    }
+
+                    if (sprite.flipped) {
+                        drawingSurface.scale(-1, 1);
+                    }
+                    if (sprite.flippedh) {
+                        drawingSurface.scale(1, -1);
+                    }
+                    
+                    drawingSurface.drawImage
+                    (
+                        image,
+                        Math.floor(sprite.sourceX), Math.floor(sprite.sourceY), Math.round(sprite.sourceWidth), Math.round(sprite.sourceHeight),
+                        Math.round(-sprite.width * horizontalScale / 2), Math.round(-sprite.height * verticalScale / 2), Math.round(sprite.width * horizontalScale), Math.round(sprite.height * verticalScale)
+                    );
+
+                    drawingSurface.restore();
+            }
+        }
+		
+		function drawRoad(sprite, image, state) {
+            if (sprite.visible) {
+                    drawingSurface.save();
+
+
+                    drawingSurface.scale(scaleX, scaleY);
+
+
+                    if (typeof state === "undefined") {
+                        state = PLAYING;
+                    }
+
+                    if (state === MENU) {
+                        drawingSurface.translate((sprite.x - (horizontalOffset / 2) - (moveTime * sprite.moveRatio)) * horizontalScale + ((sprite.width * horizontalScale / 2)), (sprite.y - (verticalOffset / 2)) * verticalScale + (sprite.height * verticalScale / 2));
+                    }
+                    else {
+                        drawingSurface.translate((sprite.x - (horizontalOffset / 2) + ((1366 - moveTime) * sprite.moveRatio)) * horizontalScale + ((sprite.width * horizontalScale / 2)), (sprite.y - (verticalOffset / 2)) * verticalScale + (sprite.height * verticalScale / 2));
+                    }
+
+
+                    if (sprite.flipped) {
+                        drawingSurface.scale(-1, 1);
+                    }
+                    if (sprite.flippedh) {
+                        drawingSurface.scale(1, -1);
+                    }
+                    
+
+                    drawingSurface.drawImage
+                    (
+                        image,
+                        Math.floor(sprite.sourceX), Math.floor(sprite.sourceY), Math.round(sprite.sourceWidth), Math.round(sprite.sourceHeight),
+                        Math.round(-sprite.width * horizontalScale / 2), Math.round(-sprite.height * verticalScale / 2), Math.round(sprite.width * horizontalScale), Math.round(sprite.height * verticalScale)
+                    );
+
+                    drawingSurface.restore();
+            }
+        }
+
+        function wait() {
+			
+			
+            waitCounter += 30;
+			
+			if (zoomCar === false)
+			{
+				setVerticalAndHorizontalScale(((1 - (waitCounter / 768)) * (PLAYZOOMAMOUNT - MENUZOOMAMOUNT)) + MENUZOOMAMOUNT);
+			}
+			
+            if (waitCounter >= 768) {
+                waitCounter = 768;
+				setVerticalAndHorizontalScale(MENUZOOMAMOUNT);
+            }
+
+            if (enter) {
+                wasDown = true;
+            }
+            else {
+                if (wasDown) {
+                    playAgainButton.action();
+                }
+                wasDown = false;
+            }
+
+            checkButtons();
+
+            render();
+        }
+
+        function newCar() {
+			
+            waitCounter += 30;
+			
+			setVerticalAndHorizontalScale(((1 - ((768 + waitCounter) / 768)) * (PLAYZOOMAMOUNT - MENUZOOMAMOUNT)) + MENUZOOMAMOUNT);
+
+
+            if (waitCounter >= 0) {
+                waitCounter = 0;
+				setVerticalAndHorizontalScale(MENUZOOMAMOUNT);
+            }
+
+            if (down) {
+                wasDown = true;
+            }
+            else {
+                if (wasDown) {
+                    carScreen = false;
+					waitCounter = 0;					
+                }
+                wasDown = false;
+            }
+            render();
+
+
+        }
+
+
+
+    </script>
+</body>
+</html>
